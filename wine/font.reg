@@ -1,0 +1,10 @@
+REGEDIT4
+
+[HKEY_CURRENT_USER\Software\Wine\Fonts\Replacements]
+"‚l‚r ‚oƒSƒVƒbƒN"="Noto Sans CJK JP"
+"MS PGothic"="Noto Sans CJK JP"
+"‚l‚r ‚o–¾’©"="Noto Sans CJK JP"
+"MS UI Gothic"="Noto Sans CJK JP"
+"‚l‚r ƒSƒVƒbƒN"="Noto Sans Mono CJK JP"
+"MS Gothic"="Noto Sans Mono CJK JP"
+"‚l‚r –¾’©"="Noto Serif Mono CJK JP"

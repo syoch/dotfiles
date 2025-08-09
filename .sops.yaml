@@ -1,0 +1,7 @@
+keys:
+  - &syoch age17jjjatas2ts9ht6zm6lh2d75kmrx87ncujphwg9r9flzn32jtf7sd2nsfv
+creation_rules:
+  - path_regex: .*\.(json|yaml)
+    key_groups:
+    - age:
+      - *syoch
