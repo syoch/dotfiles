@@ -10,6 +10,7 @@
     };
     astal.url = "github:aylur/astal";
     ags.url = "github:aylur/ags";
+    winapps.url = "github:winapps-org/winapps";
     nixgl = {
       url = "github:nix-community/nixGL";
       inputs.nixpkgs.follows = "nixpkgs";

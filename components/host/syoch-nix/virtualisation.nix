@@ -1,8 +1,7 @@
 { pkgs, ... }:
 {
-  virtualisation.docker = {
-    enable = true;
-  };
+  # enable docker/compose
+  virtualisation.docker.enable = true;
 
   virtualisation.libvirtd = {
     enable = true;
@@ -22,6 +21,8 @@
     };
   };
   programs.virt-manager.enable = true;
+
+  networking.firewall.trustedInterfaces = [ "virbr0" ];
 
   virtualisation.spiceUSBRedirection.enable = true;
 }

@@ -15,6 +15,7 @@
     ./audio.nix
     ./tools.nix
     ./cui.nix
+    ./winapps.nix
     ./de
   ];
 

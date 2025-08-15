@@ -1,6 +1,7 @@
 {
   components,
   pkgs,
+  config,
   ...
 }:
 {
@@ -67,6 +68,8 @@
 
     gnumake
   ];
+  services.twingate.enable = true;
+  services.flatpak.enable = true;
 
   programs.nix-ld.enable = true;
 
