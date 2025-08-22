@@ -6,6 +6,9 @@ rebuild:
 	git add .
 	sudo nixos-rebuild switch --flake ~/dotfiles -j $(PROCS_n1)
 
+upgrade:
+	sudo nixos-rebuild switch --flake ~/dotfiles -j $(PROCS_n1) --upgrade
+
 edit-secrets:
 	nix-shell -p sops --run "sops ./secrets.yaml"
 
