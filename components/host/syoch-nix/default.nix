@@ -53,20 +53,35 @@
     pciutils
 
     gcc
-    gdb
-    nodejs
 
     jq
-    wireshark
     ruff
 
     nix-index
 
     python313Full
     nix-output-monitor
-    chromium
 
     gnumake
+
+    zydis
+    ghq
+    dive
+    binwalk
+
+    hyprlang
+    hyprls
+    nixd
+    nixfmt-rfc-style
+
+    brightnessctl
+
+    hexyl
+    neofetch
+    ddcutil
+
+    netdiscover
+    wireshark
   ];
   services.twingate.enable = true;
   services.flatpak.enable = true;

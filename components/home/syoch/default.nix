@@ -24,7 +24,6 @@
     prismlauncher
     clang-tools
     wineWowPackages.stableFull
-    kicad
   ];
 
   programs = {

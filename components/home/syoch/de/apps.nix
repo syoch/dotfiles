@@ -2,7 +2,7 @@
 {
   imports = [
     (components + /app/firefox)
-    (components + /app/obs)
+    # (components + /app/obs)
     (components + /app/wezterm)
   ];
 
