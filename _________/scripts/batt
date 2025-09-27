@@ -1,0 +1,13 @@
+#!/usr/bin/env zsh
+set -e
+
+
+p=/sys/class/power_supply/BAT0
+
+s=`\cat $p/status`
+n=`\cat $p/energy_now`
+f=`\cat $p/energy_full`
+p=$((100.0 * $n / $f))
+
+echo "$s $p"
+

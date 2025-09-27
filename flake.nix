@@ -15,6 +15,9 @@
       url = "github:nix-community/nixGL";
       inputs.nixpkgs.follows = "nixpkgs";
     };
+
+    nixos-generators.url = "github:nix-community/nixos-generators";
+    nixos-generators.inputs.nixpkgs.follows = "nixpkgs";
   };
 
   inputs.sops-nix.url = "github:Mic92/sops-nix";
@@ -27,6 +30,7 @@
       sops-nix,
       nixgl,
       ags,
+      nixos-generators,
       ...
     }@inputs:
     {
@@ -43,6 +47,20 @@
           ./components/host/syoch-nix
 
           sops-nix.nixosModules.sops
+        ];
+      };
+      packages.x86_64-linux.iso = nixos-generators.nixosGenerate {
+        system = "x86_64-linux";
+        format = "iso";
+        specialArgs = {
+          inherit inputs;
+        };
+        modules = [
+          "${nixpkgs}/nixos/modules/installer/cd-dvd/installation-cd-minimal.nix"
+          ./components/host/rescue
+          {
+            system.stateVersion = "23.11";
+          }
         ];
       };
       homeConfigurations."syoch" = home-manager.lib.homeManagerConfiguration {

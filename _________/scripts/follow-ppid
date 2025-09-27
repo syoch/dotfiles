@@ -1,0 +1,20 @@
+#!/usr/bin/env bash
+set -eu
+
+pid=$1
+if [ -z "$pid" ]; then
+  echo "Usage: $0 <pid>"
+  exit 1
+fi
+
+echo "* $pid"
+while [ ! -z $pid ]; do
+  pid=$(cut /proc/$pid/stat -d ' ' -f 4)
+  if [ "$pid" -eq "0" ]; then
+    break
+  fi
+
+  comm=$(cat /proc/$pid/comm)
+  printf "|-> %-8s | %s\n" "$pid" "$comm"
+done
+

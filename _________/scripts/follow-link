@@ -1,0 +1,20 @@
+#!env bash
+
+link=$1
+if [ -z "$link" ]; then
+  echo "Usage: $0 <link>"
+  exit 1
+fi
+if [ ! -f "$link" ]; then
+  echo "File not found: $link"
+  exit 1
+fi
+
+echo "* $link"
+while [ ! -z $link ]; do
+  link=$(readlink "$link")
+  if [ ! -z $link ]; then
+    echo "--> $link"
+  fi
+done
+
