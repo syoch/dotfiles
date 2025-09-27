@@ -25,7 +25,7 @@ in
       Description = "Wayland Bar (AGS Implementation)";
     };
     Service = {
-      ExecStart = "/etc/profiles/per-user/syoch/bin/ags run ${home}/dotfiles/config/ags/app.ts";
+      ExecStart = "${home}/.nix-profile/bin/ags run ${home}/dotfiles/config/ags/app.ts";
     };
   };
 
@@ -41,6 +41,6 @@ in
 
     [Service]
     Type=oneshot
-    ExecStart=/run/current-system/sw/bin/systemctl --user restart ags.service
+    ExecStart=${pkgs.systemd}/sw/bin/systemctl --user restart ags.service
   '';
 }

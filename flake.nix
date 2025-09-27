@@ -26,10 +26,11 @@
       home-manager,
       sops-nix,
       nixgl,
+      ags,
       ...
     }@inputs:
     {
-      nixosConfigurations.syoch-nix = nixpkgs.lib.nixosSystem rec {
+      nixosConfigurations.syoch-nix = nixpkgs.lib.nixosSystem {
         specialArgs = {
           inherit inputs;
           inherit nixgl;
@@ -37,18 +38,39 @@
         };
         system = "x86_64-linux";
         modules = [
+          ./modules-nixos
+
           ./components/host/syoch-nix
+
           sops-nix.nixosModules.sops
-          home-manager.nixosModules.home-manager
-          {
-            home-manager.useGlobalPkgs = true;
-            home-manager.useUserPackages = true;
-            home-manager.extraSpecialArgs = specialArgs;
-            home-manager.backupFileExtension = "old";
-            home-manager.users.syoch = import ./components/home/syoch;
-          }
         ];
       };
+      homeConfigurations."syoch" = home-manager.lib.homeManagerConfiguration {
+        pkgs = nixpkgs.legacyPackages.x86_64-linux;
+        extraSpecialArgs = {
+          inherit inputs;
+          inherit nixgl;
+          components = ./components;
+        };
+        modules = [
+          ./modules-hm
+
+          ags.homeManagerModules.default
+          ./components/home/syoch
+        ];
+      };
+      devShells.x86_64-linux.default =
+        let
+          pkgs = nixpkgs.legacyPackages.x86_64-linux;
+        in
+        pkgs.mkShell {
+          packages = with pkgs; [
+            pnpm
+            amdctl
+            nix-output-monitor
+            pkgs.home-manager
+          ];
+        };
     };
 
 }

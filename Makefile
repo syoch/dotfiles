@@ -6,6 +6,11 @@ rebuild:
 	git add .
 	sudo nixos-rebuild switch --flake ~/dotfiles -j $(PROCS_n1)
 
+rebuild-hm:
+	cd ~/dotfiles
+	git add .
+	nix run home-manager/master -- switch --flake .
+
 upgrade:
 	sudo nixos-rebuild switch --flake ~/dotfiles -j $(PROCS_n1) --upgrade
 

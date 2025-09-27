@@ -1,26 +1,32 @@
 {
   components,
   pkgs,
-  config,
   ...
 }:
 {
+  system.stateVersion = "25.11";
+
   imports = [
     ./boot
-    (components + "/service/gpg-agent")
-    (components + "/service/sshd")
-    (components + "/service/tailscale")
     (components + "/user/syoch")
     ./bluetooth.nix
-    ./audio.nix
     ./de.nix
     ./hardware-configuration.nix
-    ./i18n.nix
     ./networking.nix
     ./security.nix
-    ./virtualisation.nix
-    # ./k9s.nix
   ];
+
+  os-mod.sshd.enable = true;
+  os-mod.gnupg.enable = true;
+  os-mod.pipewire.enable = true;
+  os-mod.i18n-jp.enable = true;
+
+  # RF modules
+  os-mod.bluetooth.enable = true;
+
+  # virtualisation
+  os-mod.libvirtd.enable = true;
+  virtualisation.docker.enable = true;
 
   sops.defaultSopsFile = ../../../secrets.yaml;
   sops.age.sshKeyPaths = [
@@ -31,91 +37,64 @@
     path = "/home/syoch/.ssh/config.d/secret";
   };
 
-  nixpkgs.config.allowUnfree = true;
-
+  nix.gc = {
+    automatic = true;
+    dates = "weekly";
+    options = "--delete-older-than 7d";
+  };
   nix.settings.experimental-features = [
     "nix-command"
     "flakes"
   ];
 
-  services.libinput.enable = true;
-
-  programs.zsh.enable = true;
-  users.defaultUserShell = pkgs.zsh;
-
-  environment.systemPackages = with pkgs; [
-    # Essential tools
-    vim
-    wget
-    git
-
-    htop
-    pciutils
-
-    gcc
-
-    jq
-    ruff
-
-    nix-index
-
-    python313Full
-    nix-output-monitor
-
-    gnumake
-
-    zydis
-    ghq
-    dive
-    binwalk
-
-    hyprlang
-    hyprls
-    nixd
-    nixfmt-rfc-style
-
-    brightnessctl
-
-    hexyl
-    neofetch
-    ddcutil
-
-    netdiscover
-    wireshark
-  ];
-  services.twingate.enable = true;
-  services.flatpak.enable = true;
-
-  programs.nix-ld.enable = true;
-
+  nixpkgs.config.allowUnfree = true;
   nixpkgs.config.permittedInsecurePackages = [
     "openssl-1.1.1w"
   ];
+
+  programs.zsh.enable = true;
+
+  services.libinput.enable = true;
+  programs.vim.enable = true;
+  programs.htop.enable = true;
+  programs.nix-index.enable = true;
+  programs.nix-index.enableZshIntegration = true;
+  programs.wireshark.enable = true;
+  services.upower.enable = true;
+  services.flatpak.enable = true;
+
+  programs.nix-ld.enable = true;
   programs.nix-ld.libraries = with pkgs; [
     openssl_1_1
     gobject-introspection
     nss
     nspr
   ];
+  programs.git.enable = true;
+  environment.systemPackages = with pkgs; [
+    wget
+    pciutils
+    jq
+    ruff
+    python314
+    gnumake
+    ghq
+    binwalk
+    hyprlang
+    hyprls
+    nil
+    nixfmt-rfc-style
+    brightnessctl
+    hexyl
+    neofetch
+    ddcutil
+    netdiscover
+    displaylink
+    socat
+    file
+    ffmpeg
 
-  networking.firewall.trustedInterfaces = [ "virbr0" ];
-
-  # This option defines the first version of NixOS you have installed on this particular machine,
-  # and is used to maintain compatibility with application data (e.g. databases) created on older NixOS versions.
-  #
-  # Most users should NEVER change this value after the initial install, for any reason,
-  # even if you've upgraded your system to a new NixOS release.
-  #
-  # This value does NOT affect the Nixpkgs version your packages and OS are pulled from,
-  # so changing it will NOT upgrade your system - see https://nixos.org/manual/nixos/stable/#sec-upgrading for how
-  # to actually do that.
-  #
-  # This value being lower than the current NixOS release does NOT mean your system is
-  # out of date, out of support, or vulnerable.
-  #
-  # Do NOT change this value unless you have manually inspected all the changes it would make to your configuration,
-  # and migrated your data accordingly.
-  #
-  # For more information, see `man configuration.nix` or https://nixos.org/manual/nixos/stable/options#opt-system.stateVersion .
-  system.stateVersion = "25.11"; # Did you read the comment?
+    github-desktop
+    keepassxc
+  ];
 }

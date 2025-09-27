@@ -4,7 +4,7 @@
 			"path": "."
 		},
 		{
-			"path": "../dotfiles-private"
+			"path": "config/ags"
 		}
 	],
 	"settings": {}

@@ -3,12 +3,12 @@
   gtk = {
     enable = true;
     iconTheme = {
-      package = pkgs.libsForQt5.breeze-icons;
-      name = "Breeze Dark";
+      package = pkgs.adwaita-icon-theme;
+      name = "Adwaita";
     };
     theme = {
-      package = pkgs.libsForQt5.breeze-gtk;
-      name = "Breeze Dark";
+      package = pkgs.adwaita-qt;
+      name = "Adwaita";
     };
   };
 }

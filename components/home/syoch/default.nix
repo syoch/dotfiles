@@ -1,7 +1,6 @@
 {
   nixgl,
   config,
-  inputs,
   pkgs,
   ...
 }:
@@ -11,8 +10,7 @@
   home.stateVersion = "25.05";
 
   imports = [
-    inputs.ags.homeManagerModules.default
-    ./audio.nix
+    # ./audio.nix
     ./tools.nix
     ./cui.nix
     ./winapps.nix
@@ -22,16 +20,12 @@
   home.packages = with pkgs; [
     dotnet-sdk_9
     prismlauncher
-    clang-tools
-    wineWowPackages.stableFull
   ];
 
-  programs = {
-    direnv = {
-      enable = true;
-      enableZshIntegration = true; # see note on other shells below
-      nix-direnv.enable = true;
-    };
+  programs.direnv = {
+    enable = true;
+    enableZshIntegration = true;
+    nix-direnv.enable = true;
   };
 
   home.file.".local/share/PrismLauncher/instances".source =

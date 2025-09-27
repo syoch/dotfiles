@@ -2,16 +2,18 @@
 {
   # Greeter
   services.xserver.enable = true;
-
   services.xserver.displayManager.sddm = {
     enable = true;
     wayland.enable = true;
   };
 
+  # Applications
+  programs.firefox.enable = true;
+  programs.obs-studio.enable = true;
+
   # Hypr
-  programs.hyprland = {
-    enable = true;
-  };
+  programs.hyprland.enable = true;
+  programs.hyprlock.enable = true;
 
   programs.thunderbird.enable = true;
 
@@ -21,10 +23,10 @@
   programs.thunar.plugins = with pkgs.xfce; [
     thunar-archive-plugin
     thunar-volman
+    tumbler
   ];
-  services.gvfs = {
-    enable = true;
-  };
+
+  services.gvfs.enable = true;
 
   # Font
   fonts = {
@@ -34,7 +36,6 @@
       noto-fonts-cjk-sans
       noto-fonts-emoji
       nerd-fonts.fira-code
-      hackgen-nf-font
     ];
     fontDir.enable = true;
     fontconfig = {

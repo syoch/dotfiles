@@ -23,13 +23,8 @@ function BatteryLevel() {
   return (
     <box
       class="Battery"
-      visible={is_present}
     >
-      <image
-        iconName={icon}
-        tooltipMarkup={text}
-      />
-      {/* <label label={text} /> */}
+      <label label={text} />
     </box >
   );
 }

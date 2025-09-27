@@ -15,7 +15,7 @@
       Description = "Launch mako";
     };
     Service = {
-      ExecStart = "/home/syoch/.nix-profile/bin/mako";
+      ExecStart = "${pkgs.mako}/bin/mako";
     };
   };
 

@@ -4,10 +4,11 @@
 
   networking.firewall.enable = true;
   networking.firewall.allowedTCPPorts = [ 22 ];
-  # networking.firewall.allowedUDPPorts = [  ];
+
+  services.twingate.enable = true;
+  os-mod.tailscale.enable = true;
 
   sops.secrets."network-env" = { };
-
   networking = {
     networkmanager = {
       enable = true;

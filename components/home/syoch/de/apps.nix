@@ -1,10 +1,23 @@
 { components, pkgs, ... }:
 {
   imports = [
-    (components + /app/firefox)
-    # (components + /app/obs)
     (components + /app/wezterm)
   ];
+
+  programs.firefox.languagePacks = [
+    "jp"
+    "ja-JP"
+  ];
+
+  programs.obs-studio = {
+    plugins = with pkgs.obs-studio-plugins; [
+      wlrobs
+      obs-backgroundremoval
+      obs-pipewire-audio-capture
+      obs-gstreamer
+      obs-vaapi
+    ];
+  };
 
   home.packages = with pkgs; [
     nwg-displays
@@ -12,7 +25,6 @@
     vlc
 
     ghidra
-    keepassxc
     pavucontrol
   ];
 
