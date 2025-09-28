@@ -32,16 +32,15 @@
 
   environment.systemPackages = with pkgs; [
     git
+    curl
+    wget
     htop
     tmux
     tree
     nano
     neovim
     rsync
-    ripgrep
-    bat
     testdisk
-    gparted
   ];
 
   # Part of base-system.nix:
