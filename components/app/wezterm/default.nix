@@ -6,5 +6,5 @@
   };
 
   home.file.".config/wezterm".source =
-    config.lib.file.mkOutOfStoreSymlink "${config.home.homeDirectory}/dotfiles/components/app-wezterm/config";
+    config.lib.file.mkOutOfStoreSymlink "${config.home.homeDirectory}/dotfiles/components/app/wezterm/config";
 }

@@ -18,6 +18,12 @@ in
     programs.eza.enable = true;
     programs.eza.enableZshIntegration = true;
 
+    programs.direnv = {
+      enable = true;
+      enableZshIntegration = true;
+      nix-direnv.enable = true;
+    };
+
     programs.zsh = {
       enable = true;
       enableCompletion = true;

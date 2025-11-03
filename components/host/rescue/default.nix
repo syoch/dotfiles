@@ -6,7 +6,7 @@
 # nix build .#iso
 # sudo dd bs=4M if=result/iso/syoch-rescue-iso.iso of=/dev/sdX status=progress oflag=sync
 {
-  networking.hostName = "rescue-iso";
+  networking.hostName = "syoch-sv01";
   networking.networkmanager.enable = true;
 
   boot.supportedFilesystems = [
@@ -66,6 +66,8 @@
     font = "Lat2-Terminus16";
     useXkbConfig = true;
   };
+
+  services.sshd.enable = true;
 
   image.fileName = lib.mkForce "syoch-rescue-iso.iso";
   isoImage.squashfsCompression = "zstd -Xcompression-level 6";

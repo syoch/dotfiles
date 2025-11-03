@@ -6,6 +6,7 @@
     enable = true;
     wayland.enable = true;
   };
+  programs.xwayland.enable = true;
 
   # Applications
   programs.firefox.enable = true;
@@ -34,7 +35,7 @@
       noto-fonts
       noto-fonts-cjk-serif
       noto-fonts-cjk-sans
-      noto-fonts-emoji
+      noto-fonts-color-emoji
       nerd-fonts.fira-code
     ];
     fontDir.enable = true;

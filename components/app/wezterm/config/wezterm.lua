@@ -26,5 +26,6 @@ config.inactive_pane_hsb = {
 }
 config.show_new_tab_button_in_tab_bar = false
 
+
 -- and finally, return the configuration to wezterm
 return config

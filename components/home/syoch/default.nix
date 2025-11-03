@@ -11,25 +11,19 @@
 
   imports = [
     # ./audio.nix
-    ./tools.nix
-    ./cui.nix
-    ./winapps.nix
     ./de
   ];
 
-  home.packages = with pkgs; [
-    dotnet-sdk_9
-    prismlauncher
-  ];
+  hm-module.zsh.enable = true;
+  hm-module.nvim.enable = true;
+  hm-module.tmux.enable = true;
 
-  programs.direnv = {
-    enable = true;
-    enableZshIntegration = true;
-    nix-direnv.enable = true;
-  };
+  hm-module.git.enable = true;
+  hm-module.ssh.enable = true;
+  hm-module.syncthing.enable = true;
 
-  home.file.".local/share/PrismLauncher/instances".source =
-    config.lib.file.mkOutOfStoreSymlink "/mnt/usbssd/NAS/Apps/_Game/PolyMC-Windows-Portable-1.4.3/instances";
+  hm-module.winapps.enable = true;
+  hm-module.prismlauncher.enable = true;
 
   nixGL.packages = import nixgl { inherit pkgs; };
   nixGL.defaultWrapper = "mesa"; # or whatever wrapper you need

@@ -19,3 +19,6 @@ edit-secrets:
 
 update-keys:
 	nix-shell -p sops --run "sops updatekeys ./secrets.yaml"
+
+iso:
+	nix build .#iso -j $(PROCS_n1)

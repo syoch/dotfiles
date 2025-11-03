@@ -95,6 +95,7 @@ return {
     { key = 'Copy', mods = 'NONE', action = act.CopyTo 'Clipboard' },
     { key = 'Paste', mods = 'NONE', action = act.PasteFrom 'Clipboard' },
     { key = 'r', mods='CTRL', action = act.RotatePanes 'Clockwise' },
+    { key = 'a', mods='SHIFT|CTRL', action = act.ShowLauncherArgs { flags = 'WORKSPACES' , title = "Select workspace" } },
   },
 
   key_tables = {

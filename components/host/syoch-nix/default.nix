@@ -82,7 +82,7 @@
     binwalk
     hyprlang
     hyprls
-    nil
+    nixd
     nixfmt-rfc-style
     brightnessctl
     hexyl
@@ -93,7 +93,7 @@
     socat
     file
     ffmpeg
-
+    # kicad
     github-desktop
     keepassxc
   ];
