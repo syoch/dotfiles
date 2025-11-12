@@ -16,12 +16,9 @@ in
   config = mkIf cfg.enable {
     services.mako.enable = true;
     systemd.user.services.mako = {
-      Unit = {
-        Description = "Launch mako";
-      };
-      Service = {
-        ExecStart = "${pkgs.mako}/bin/mako";
-      };
+      Unit.Description = "Launch mako";
+      Service.ExecStart = "${pkgs.mako}/bin/mako";
+      Install.RequiredBy = [ "desktop-session.target" ];
     };
   };
 }

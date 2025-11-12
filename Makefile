@@ -22,3 +22,9 @@ update-keys:
 
 iso:
 	nix build .#iso -j $(PROCS_n1)
+
+cleanup:
+	for l in /nix/var/nix/gcroots/auto/*; do p=`readlink $l`; stat $p >/dev/null 2>&1 || { sudo rm  $l} && echo "Saved $p"; true; done
+	nix store gc
+	nix-collect-garbage -d
+	nix store optimise

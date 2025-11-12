@@ -16,9 +16,9 @@ in
     programs.git = {
       enable = true;
       lfs.enable = true;
-      userName = "syoch";
-      userEmail = "syoch64@gmail.com";
-      aliases = {
+      settings.user.name = "syoch";
+      settings.user.email = "syoch64@gmail.com";
+      settings.aliases = {
         co = "checkout";
         br = "branch";
         ci = "commit";

@@ -1,0 +1,27 @@
+{
+    "nix.enableLanguageServer": true,
+  "nix.serverSettings": {
+        "nixd": {
+
+            "formatting": {
+                "command": [
+                    "nixfmt"
+                ],
+            },
+            "options": {
+                // "nixpkgs": {
+                //     "expr": "import (builtins.getFlake \"${workspaceFolder}\").nixpkgs {}"
+                // },
+                "nixos": {
+                    "expr": "(builtins.getFlake \"${workspaceFolder}\").nixosConfigurations.syoch-nix.options"
+                },
+                "home-manager": {
+                    "expr": "(builtins.getFlake \"${workspaceFolder}\").homeConfigurations.syoch.options"
+                },
+                "custom-hm": {
+                    "expr": "(builtins.getFlake \"${workspaceFolder}\").homeConfigurations.syoch-custom.options"
+                }
+            },
+        }
+    },
+}

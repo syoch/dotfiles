@@ -2,9 +2,10 @@
   imports = [
     ./de/ags.nix
     ./de/mako.nix
-    ./de/services.nix
     ./de/i18n.nix
-    ./de/gtk.nix
+    ./de/theme-setting.nix
+    ./de/hyprland.nix
+    ./de/wayvnc.nix
 
     ./cui/git.nix
     ./cui/nvim.nix
@@ -13,8 +14,12 @@
     ./cui/tmux.nix
     ./cui/zsh
 
-    ./prismlauncher.nix
+    ./apps/prismlauncher.nix
+    ./apps/wezterm.nix
+    ./apps/firefox.nix
+    ./apps/obs-studio.nix
 
     ./winapps.nix
+    ./nixgl.nix
   ];
 }

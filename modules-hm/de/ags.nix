@@ -17,6 +17,7 @@ in
   config = lib.mkIf cfg.enable {
     programs.ags = {
       enable = true;
+      systemd.enable = false;
 
       extraPackages = with inputs.astal.packages.${pkgs.system}; [
         battery
@@ -28,27 +29,24 @@ in
     };
 
     systemd.user.services.ags = {
-      Unit = {
-        Description = "Wayland Bar (AGS Implementation)";
-      };
-      Service = {
-        ExecStart = "${home}/.nix-profile/bin/ags run ${home}/dotfiles/config/ags/app.ts";
-      };
+      Unit.Description = "Wayland Bar (AGS Implementation)";
+      Service.ExecStart = "${config.programs.ags.finalPackage}/bin/ags run ${home}/dotfiles/config/ags/app.ts";
+      Install.WantedBy = [ "desktop-session.target" ];
     };
 
-    home.file.".config/systemd/user/ags-restart.path".text = ''
-      [Path]
-      PathModified=${home}/dotfiles/config/ags/app.ts
-      PathModified=${home}/dotfiles/config/ags/widget
-    '';
-    home.file.".config/systemd/user/ags-restart.service".text = ''
-      [Unit]
-      Description=Restart AGS
-      After=hyprland-services.target
+    systemd.user.paths.ags-restart = {
+      Unit.Description = "Watch AGS config for changes";
+      Path.PathModified = [
+        "${home}/dotfiles/config/ags/app.ts"
+        "${home}/dotfiles/config/ags/widget"
+      ];
+      Install.WantedBy = [ "desktop-session.target" ];
+    };
 
-      [Service]
-      Type=oneshot
-      ExecStart=${pkgs.systemd}/sw/bin/systemctl --user restart ags.service
-    '';
+    systemd.user.services.ags-restart = {
+      Unit.Description = "Restart AGS on config change";
+      Service.Type = "oneshot";
+      Service.ExecStart = "${pkgs.systemd}/bin/systemctl --user restart ags.service";
+    };
   };
 }

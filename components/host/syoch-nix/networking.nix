@@ -2,7 +2,7 @@
 {
   networking.hostName = "syoch-nix";
 
-  networking.firewall.enable = true;
+  networking.firewall.enable = false;
   networking.firewall.allowedTCPPorts = [ 22 ];
 
   services.twingate.enable = true;
