@@ -21,6 +21,13 @@ in
   config = lib.mkIf cfg.enable {
     fonts.fontconfig.enable = true;
 
+    home.pointerCursor = {
+      gtk.enable = true;
+      package = pkgs.bibata-cursors;
+      name = "Bibata-Modern-Classic";
+      size = 16;
+    };
+
     home.file = mkCustomFonts [
       "Firple-Light.ttf"
       "Firple-LightItalic.ttf"

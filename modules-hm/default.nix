@@ -4,7 +4,7 @@
     ./de/mako.nix
     ./de/i18n.nix
     ./de/theme-setting.nix
-    ./de/hyprland.nix
+    ./de/hyprland-utils.nix
     ./de/wayvnc.nix
 
     ./cui/git.nix

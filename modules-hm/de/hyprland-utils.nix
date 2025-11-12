@@ -6,10 +6,10 @@
 }:
 with lib;
 let
-  cfg = config.hm-module.hyprland;
+  cfg = config.hm-module.hyprland-utils;
 in
 {
-  options.hm-module.hyprland = {
+  options.hm-module.hyprland-utils = {
     enable = mkEnableOption "hyprland";
   };
 
@@ -25,8 +25,11 @@ in
     };
 
     # Hyprland Config
+    wayland.windowManager.hyprland.enable = true;
+
     home.file.".config/hypr".source =
       config.lib.file.mkOutOfStoreSymlink "${config.home.homeDirectory}/dotfiles/config/hypr";
+    programs.wofi.enable = true;
 
     # Wallpapers
     services.hyprpaper.enable = true;
@@ -52,9 +55,10 @@ in
 
     home.sessionVariables.XDG_SESSION_TYPE = "wayland";
     home.sessionVariables.MOZ_ENABLE_WAYLAND = "1";
+    home.sessionVariables.GTK_THEME = "Adwaita;dark";
     home.sessionVariables.QT_QPA_PLATFORM = "wayland;xcb";
-    home.sessionVariables.XDG_CURRENT_DESKTOP = "sway";
-    home.sessionVariables.XDG_CURRENT_SESSION = "sway";
+    home.sessionVariables.XDG_CURRENT_DESKTOP = "hyprland";
+    home.sessionVariables.XDG_CURRENT_SESSION = "hyprland";
     home.sessionVariables.LIBSEAT_BACKEND = "logind";
     home.sessionVariables.GDK_DPI_SCALE = "1";
     home.sessionVariables.QT_SCALE_FACTOR = "1";

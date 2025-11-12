@@ -15,6 +15,9 @@
   # Hypr
   programs.hyprland.enable = true;
   programs.hyprlock.enable = true;
+  environment.systemPackages = [
+    pkgs.hyprcursor
+  ];
 
   programs.thunderbird.enable = true;
 

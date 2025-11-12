@@ -7,14 +7,18 @@ type TrayIconProps = {
 }
 
 function TrayIcon({ item }: TrayIconProps) {
-  const tooltip_markup = createBinding(item, "tooltipMarkup").as((markup) => markup ?? "");
   return (
     <menubutton
-      tooltipMarkup={tooltip_markup}
-      menuModel={item.menuModel}
+      tooltipMarkup={createBinding(item, "tooltipMarkup")}
+      menuModel={createBinding(item, "menuModel")}
+      onRealize={(self) => {
+        createBinding(item, "actionGroup").as(ag => self.insert_action_group("dbusmenu", ag));
+        self.insert_action_group("dbusmenu", item.action_group);
+      }
+      }
     >
       <image
-        iconName={item.iconName}
+        gicon={createBinding(item, "gicon")}
       />
     </menubutton>
   );

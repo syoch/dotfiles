@@ -3,6 +3,7 @@
   home.username = "syoch";
   home.homeDirectory = "/home/syoch";
   home.stateVersion = "25.05";
+
   nixpkgs.config.allowUnfree = true;
   programs.home-manager.enable = true;
 
@@ -12,7 +13,7 @@
 
   #* Desktop environment
   hm-module.theme-setting.enable = true;
-  hm-module.hyprland.enable = true; # DE
+  hm-module.hyprland-utils.enable = true; # DE
   hm-module.ags.enable = true; # Bar Implementation
   hm-module.mako.enable = true; # Notifications
   hm-module.wayvnc.enable = true; # VNC Server
@@ -32,7 +33,7 @@
   hm-module.prismlauncher.enable = true;
   programs.joplin-desktop.enable = true;
   programs.vscode.enable = true;
-  programs.wofi.enable = true;
+  services.tailscale-systray.enable = true;
 
   home.packages = with pkgs; [
     nwg-displays
