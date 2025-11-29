@@ -1,0 +1,17 @@
+#!/usr/bin/env bash
+
+set -eu
+
+for l in `echo /nix/var/nix/gcroots/auto/*`; do
+  p=`readlink $l`
+  if stat $p >/dev/null 2>&1 ; then
+    echo "Saved $p"
+  else
+    echo "Remove $p"
+    sudo rm $l
+  fi
+done
+
+nix store gc
+nix-collect-garbage -d
+nix store optimise

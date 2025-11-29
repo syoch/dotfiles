@@ -111,6 +111,8 @@
             amdctl
             nix-output-monitor
             pkgs.home-manager
+            nix-tree
+            nix-du
           ];
         };
     };
