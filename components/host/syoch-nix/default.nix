@@ -17,7 +17,6 @@
   ];
 
   os-mod.sshd.enable = true;
-  os-mod.gnupg.enable = true;
   os-mod.pipewire.enable = true;
   os-mod.i18n-jp.enable = true;
 

@@ -48,6 +48,10 @@
   swapDevices = [
     { device = "/dev/disk/by-uuid/bcdb0ace-67c7-489f-a2f7-9eac47bb7067"; }
   ];
+  zramSwap.enable = true;
+  boot.kernel.sysctl = {
+    "vm.swappiness" = 5;
+  };
 
   networking.useDHCP = lib.mkDefault true;
 

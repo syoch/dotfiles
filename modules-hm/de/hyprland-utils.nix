@@ -25,7 +25,7 @@ in
     };
 
     # Hyprland Config
-    wayland.windowManager.hyprland.enable = true;
+    # wayland.windowManager.hyprland.enable = true;
 
     home.file.".config/hypr".source =
       config.lib.file.mkOutOfStoreSymlink "${config.home.homeDirectory}/dotfiles/config/hypr";
@@ -57,7 +57,6 @@ in
     home.sessionVariables.MOZ_ENABLE_WAYLAND = "1";
     home.sessionVariables.GTK_THEME = "Adwaita;dark";
     home.sessionVariables.QT_QPA_PLATFORM = "wayland;xcb";
-    home.sessionVariables.XDG_CURRENT_DESKTOP = "hyprland";
     home.sessionVariables.XDG_CURRENT_SESSION = "hyprland";
     home.sessionVariables.LIBSEAT_BACKEND = "logind";
     home.sessionVariables.GDK_DPI_SCALE = "1";

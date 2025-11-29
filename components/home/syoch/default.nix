@@ -35,6 +35,8 @@
   programs.vscode.enable = true;
   services.tailscale-systray.enable = true;
 
+  hm-module.gpg-agent.enable = true;
+
   home.packages = with pkgs; [
     nwg-displays
     nwg-look

@@ -12,10 +12,10 @@
     }
   '';
 
-  boot = {
-    extraModulePackages = [
-      config.boot.kernelPackages.evdi
-    ];
-    kernelPackages = pkgs.linuxPackages_zen;
-  };
+  boot.extraModulePackages = [
+    config.boot.kernelPackages.evdi
+  ];
+
+  boot.kernelPackages = pkgs.linuxPackages_zen;
+
 }

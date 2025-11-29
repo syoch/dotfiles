@@ -21,5 +21,6 @@
 
     ./winapps.nix
     ./nixgl.nix
+    ./gpg-agent.nix
   ];
 }
