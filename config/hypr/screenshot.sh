@@ -1,5 +1,9 @@
 #!/usr/bin/env bash
 
+if [ ! lsmod | grep -q i2c_dev ]; then
+  sudo modprobe i2c-dev
+fi
+
 mode=$(
   cat <<EOS | wofi --dmenu
 Screen
