@@ -6,5 +6,6 @@
     ./pipewire.nix
     ./sshd.nix
     ./tailscale.nix
+    ./router.nix
   ];
 }
