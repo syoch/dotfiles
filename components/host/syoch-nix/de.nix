@@ -8,10 +8,6 @@
   };
   programs.xwayland.enable = true;
 
-  # Applications
-  programs.firefox.enable = true;
-  programs.obs-studio.enable = true;
-
   # Hypr
   programs.hyprland.enable = true;
   programs.hyprlock.enable = true;
