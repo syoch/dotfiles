@@ -20,40 +20,23 @@
   boot.extraModulePackages = [ ];
 
   fileSystems."/" = {
-    device = "/dev/disk/by-uuid/6aa493c5-ee38-4f9a-adbf-944168b48219";
+    device = "/dev/lvg-share/NixOS";
     fsType = "ext4";
   };
 
-  fileSystems."/mnt/data" = {
+  fileSystems."/home" = {
     device = "/dev/lvg-share/data";
-    options = [ "nofail" ];
-  };
-
-  fileSystems."/mnt/windows" = {
-    device = "/dev/disk/by-uuid/EC6A27026A26C962";
-  };
-
-  fileSystems."/var/lib/docker" = {
-    device = "/dev/lvg-share/docker";
     fsType = "ext4";
-    options = [ "nofail" ];
   };
 
-  fileSystems."/mnt/usbssd" = {
-    device = "/dev/disk/by-uuid/26E8A3ACE8A378A7";
-    fsType = "ntfs";
-    options = [ "nofail" ];
+  fileSystems."/boot/efi" = {
+    device = "/dev/disk/by-uuid/840C-2E41";
+    fsType = "vfat";
   };
 
   swapDevices = [
     { device = "/dev/disk/by-uuid/bcdb0ace-67c7-489f-a2f7-9eac47bb7067"; }
   ];
-  zramSwap.enable = true;
-  boot.kernel.sysctl = {
-    "vm.swappiness" = 5;
-  };
-
-  networking.useDHCP = lib.mkDefault true;
 
   nixpkgs.hostPlatform = lib.mkDefault "x86_64-linux";
   hardware.cpu.amd.updateMicrocode = lib.mkDefault config.hardware.enableRedistributableFirmware;
