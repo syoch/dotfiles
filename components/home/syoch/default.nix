@@ -46,6 +46,7 @@
     pavucontrol
 
     p7zip
+    nixd
   ];
 
 }
