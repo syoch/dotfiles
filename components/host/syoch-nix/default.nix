@@ -1,5 +1,5 @@
 {
-  components,
+  config,
   pkgs,
   ...
 }:
@@ -7,23 +7,11 @@
   system.stateVersion = "25.11";
 
   imports = [
-    ./boot
-    (components + "/user/syoch")
-    ./de.nix
     ./hardware-configuration.nix
-    ./networking.nix
-    ./security.nix
+    ./secrets.nix
+    ./de.nix
+    ./wifi.nix
   ];
-
-  # sops
-  sops.defaultSopsFile = ../../../secrets.yaml;
-  sops.age.sshKeyPaths = [
-    "/home/syoch/.config/sops/age/id_syoch"
-  ];
-  sops.secrets."ssh-config" = {
-    owner = "syoch";
-    path = "/home/syoch/.ssh/config.d/secret";
-  };
 
   # Drives
   fileSystems."/mnt/windows" = {
@@ -34,59 +22,49 @@
     device = "/dev/disk/by-uuid/26E8A3ACE8A378A7";
     options = [ "nofail" ];
   };
-  zramSwap.enable = true;
-  boot.kernel.sysctl."vm.swappiness" = 5;
 
-  # config
-  os-mod.sshd.enable = true;
-  os-mod.pipewire.enable = true;
-  os-mod.i18n-jp.enable = true;
-  nix.settings.extra-sandbox-paths = [
-    "/nix/var/cache/ccache"
-  ];
-
-  # RF modules
-  os-mod.bluetooth.enable = true;
-
-  # virtualisation
-  os-mod.libvirtd.enable = true;
-  virtualisation.docker.enable = true;
-
-  nix.gc = {
-    automatic = true;
-    dates = "weekly";
-    options = "--delete-older-than 7d";
-  };
-  nix.settings.experimental-features = [
-    "nix-command"
-    "flakes"
+  boot.extraModulePackages = [
+    config.boot.kernelPackages.evdi
   ];
 
   nixpkgs.config.allowUnfree = true;
-  nixpkgs.config.permittedInsecurePackages = [
-    "openssl-1.1.1w"
-  ];
 
-  programs.zsh.enable = true;
-  services.libinput.enable = true;
+  # config
+  os-mod.system.enable = true;
+  os-mod.system.allowWheelToRunSudo = true;
+
+  os-mod.user-syoch.enable = true;
+  os-mod.sshd.enable = true;
+  os-mod.pipewire.enable = true;
+  os-mod.i18n-jp.enable = true;
+  os-mod.bluetooth.enable = true;
+  os-mod.libvirtd.enable = true;
+  os-mod.tailscale.enable = true;
+
   programs.vim.enable = true;
   programs.htop.enable = true;
   programs.wireshark.enable = true;
+  programs.git.enable = true;
+
+  services.libinput.enable = true;
   services.upower.enable = true;
   services.flatpak.enable = true;
+  services.twingate.enable = true;
 
-  programs.git.enable = true;
+  virtualisation.docker.enable = true;
+
+  networking.hostName = "syoch-nix";
+  networking.networkmanager.enable = true;
+  networking.firewall.allowedTCPPorts = [ 22 ];
+
   environment.systemPackages = with pkgs; [
     wget
-    pciutils
     jq
     ruff
     python314
     gnumake
     ghq
     binwalk
-    hyprlang
-    hyprls
     nixfmt-rfc-style
     brightnessctl
     hexyl
@@ -97,7 +75,6 @@
     socat
     file
     ffmpeg
-    # kicad
     github-desktop
     keepassxc
   ];

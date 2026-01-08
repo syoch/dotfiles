@@ -1,6 +1,20 @@
 PROCS = $(shell nproc)
 PROCS_n1 = $(shell expr $(PROCS) - 1)
 
+SV01_USER := syoch
+SV01_HOST := 100.96.100.1
+SV01_SECRETS := ./components/host/sv01/secrets-sv01.yaml
+
+SYOCH_NIX_USER := syoch
+SYOCH_NIX_HOST := syoch-nix
+SYOCH_NIX_SECRETS := ./components/host/syoch-nix/secrets.yaml
+
+rebuild-sv01:
+	nixos-rebuild switch --flake .#sv01 \
+		--sudo --ask-sudo-password \
+		--build-host $(SV01_USER)@$(SV01_HOST) \
+		--target-host $(SV01_USER)@$(SV01_HOST) \
+
 rebuild:
 	cd ~/dotfiles; git add .
 	sudo nixos-rebuild switch --flake ~/dotfiles -j $(PROCS_n1)
@@ -10,10 +24,16 @@ rebuild-hm:
 	nix run home-manager/master -- switch --flake .
 
 edit-secrets:
-	nix-shell -p sops --run "sops ./secrets.yaml"
+	EDITOR="code --wait" nix-shell -p sops --run "sops components/host/syoch-nix/secrets.yaml"
+
+edit-secrets-sv01:
+	EDITOR="code --wait" nix-shell -p sops --run "sops components/host/sv01/secrets.yaml"
 
 update-keys:
-	nix-shell -p sops --run "sops updatekeys ./secrets.yaml"
+	nix-shell -p sops --run "sops updatekeys components/host/syoch-nix/secrets.yaml"
+
+update-keys-sv01:
+	nix-shell -p sops --run "sops updatekeys ./components/host/sv01/secrets.yaml"
 
 iso:
 	nix build .#iso -j $(PROCS_n1)

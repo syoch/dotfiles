@@ -3,7 +3,7 @@
   description = "NixOS Configuration by syoch";
 
   inputs = {
-    nixpkgs.url = "github:nixos/nixpkgs/nixos-unstable";
+    nixpkgs.url = "github:nixos/nixpkgs/nixos-25.11";
     home-manager = {
       url = "github:nix-community/home-manager";
       inputs.nixpkgs.follows = "nixpkgs";
@@ -41,6 +41,19 @@
       ...
     }@inputs:
     {
+      nixosConfigurations.sv01 = nixpkgs.lib.nixosSystem {
+        specialArgs = {
+          inherit inputs;
+          inherit nixgl;
+          components = ./components;
+        };
+        system = "x86_64-linux";
+        modules = [
+          ./modules-nixos
+          ./components/host/sv01
+          sops-nix.nixosModules.sops
+        ];
+      };
       nixosConfigurations.syoch-nix = nixpkgs.lib.nixosSystem {
         specialArgs = {
           inherit inputs;
@@ -50,9 +63,7 @@
         system = "x86_64-linux";
         modules = [
           ./modules-nixos
-
           ./components/host/syoch-nix
-
           sops-nix.nixosModules.sops
         ];
       };
@@ -72,6 +83,9 @@
         };
 
         home-manager-path = home-manager.outPath;
+      };
+      packages.x86_64-linux.adb_re = import ./__________/adb_re {
+        pkgs = nixpkgs.legacyPackages.x86_64-linux;
       };
       packages.x86_64-linux.iso = nixos-generators.nixosGenerate {
         system = "x86_64-linux";
@@ -113,6 +127,8 @@
             pkgs.home-manager
             nix-tree
             nix-du
+            ncdu
+            unzip
           ];
         };
     };

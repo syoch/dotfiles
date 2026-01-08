@@ -7,5 +7,7 @@
     ./sshd.nix
     ./tailscale.nix
     ./router.nix
+    ./user-syoch.nix
+    ./system.nix
   ];
 }

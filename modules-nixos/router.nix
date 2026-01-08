@@ -66,7 +66,7 @@ in
       content = ''
         chain postrouting {
           type nat hook postrouting priority 100; policy accept;
-          ifname "${cfg.downstream.interface}" masquerade
+          iifname "${cfg.downstream.interface}" masquerade
         }
       '';
     };
