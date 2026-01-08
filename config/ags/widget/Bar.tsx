@@ -59,7 +59,7 @@ export default function Bar(monitor: Gdk.Monitor) {
 
         <box $type="end">
           <SysTray />
-          {/* <Network /> */}
+          <Network />
 
           <CPUUsageWidget />
           <MemoryUsageWidget />
