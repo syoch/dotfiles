@@ -13,5 +13,5 @@ all: keys.pub.txt
 install: keys.txt $(SSH_KEY)
 	mkdir -p ~/.config/sops/age
 	cp keys.txt ~/.config/sops/age/keys.txt
-	cp $(SSH_KEY) ~/.config/sops/age/id_syoch
+	cp $(SSH_KEY) ~/.config/sops/age/$(SSH_KEY)
 all: install

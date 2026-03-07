@@ -45,14 +45,21 @@ in
 
     gtk = {
       enable = true;
-      iconTheme = {
-        package = pkgs.adwaita-icon-theme;
-        name = "Adwaita";
-      };
       theme = {
-        package = pkgs.adwaita-qt;
-        name = "Adwaita";
+        package = pkgs.orchis-theme;
+        name = "Orchis-Grey-Dark";
       };
+
+      iconTheme = {
+        package = pkgs.tela-icon-theme;
+        name = "Tela-blue-dark";
+      };
+    };
+    gtk.gtk3.extraConfig = {
+      gtk-application-prefer-dark-theme = 1;
+    };
+    gtk.gtk4.extraConfig = {
+      gtk-application-prefer-dark-theme = 1;
     };
   };
 }

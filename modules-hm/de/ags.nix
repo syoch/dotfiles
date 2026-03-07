@@ -25,6 +25,7 @@ in
         network
         tray
         wireplumber
+        mpris
       ];
     };
 
@@ -38,6 +39,7 @@ in
       Unit.Description = "Watch AGS config for changes";
       Path.PathModified = [
         "${home}/dotfiles/config/ags/app.ts"
+        "${home}/dotfiles/config/ags/style.scss"
         "${home}/dotfiles/config/ags/widget"
       ];
       Install.WantedBy = [ "desktop-session.target" ];

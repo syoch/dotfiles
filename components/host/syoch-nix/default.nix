@@ -1,30 +1,14 @@
-{
-  config,
-  pkgs,
-  ...
-}:
+{ pkgs, ... }:
 {
   system.stateVersion = "25.11";
 
   imports = [
     ./hardware-configuration.nix
+    ./hardware-specific.nix
     ./secrets.nix
     ./de.nix
     ./wifi.nix
-  ];
-
-  # Drives
-  fileSystems."/mnt/windows" = {
-    device = "/dev/disk/by-uuid/EC6A27026A26C962";
-    options = [ "nofail" ];
-  };
-  fileSystems."/mnt/usbssd" = {
-    device = "/dev/disk/by-uuid/26E8A3ACE8A378A7";
-    options = [ "nofail" ];
-  };
-
-  boot.extraModulePackages = [
-    config.boot.kernelPackages.evdi
+    # ./vm-lab.nix
   ];
 
   nixpkgs.config.allowUnfree = true;
@@ -55,7 +39,39 @@
 
   networking.hostName = "syoch-nix";
   networking.networkmanager.enable = true;
-  networking.firewall.allowedTCPPorts = [ 22 ];
+
+  nix.settings.extra-sandbox-paths = [
+    "/nix/var/cache/ccache"
+  ];
+
+  services.cloudflared.enable = true;
+
+  nixpkgs.config.permittedInsecurePackages = [
+    "openssl-1.1.1w"
+  ];
+
+  programs.nix-ld.enable = true;
+  programs.nix-ld.libraries = with pkgs; [
+    openssl_1_1
+    gobject-introspection
+    nss
+    nspr
+  ];
+
+  services.udev.extraRules = ''
+    SUBSYSTEMS=="usb", ATTRS{idVendor}=="0483", ATTRS{idProduct}=="374b", MODE="0666"
+  '';
+
+  nix.settings.substituters = [
+    "https://nnctrobo.cachix.org"
+  ];
+  nix.settings.trusted-public-keys = [
+    "nnctrobo.cachix.org-1:1dKKIMpU2HT8hYTQVOxaE8YGT1rVvHpZNjgkMCrIRzM="
+  ];
+
+  programs.steam = {
+    enable = true;
+  };
 
   environment.systemPackages = with pkgs; [
     wget
@@ -77,5 +93,6 @@
     ffmpeg
     github-desktop
     keepassxc
+    cifs-utils
   ];
 }

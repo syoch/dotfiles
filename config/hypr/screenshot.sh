@@ -11,6 +11,7 @@ Rect region
 Whole desktop
 Brightness 30%
 Brightness 100%
+Restart ags
 EOS
 )
 
@@ -38,4 +39,6 @@ elif [ "$mode" == "Brightness 100%" ]; then
   brightnessctl set 100%
   sudo ddcutil -n L56051794302 setvcp 0x10 100
   sudo ddcutil -l SB240Y setvcp 0x10 100
+elif [ "$mode" == "Restart ags" ]; then
+  systemctl --user restart ags
 fi

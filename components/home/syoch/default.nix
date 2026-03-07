@@ -8,7 +8,7 @@
   programs.home-manager.enable = true;
 
   imports = [
-    # ./audio.nix
+    ./audio.nix
   ];
 
   #* Desktop environment
@@ -36,17 +36,19 @@
   services.tailscale-systray.enable = true;
 
   hm-module.gpg-agent.enable = true;
-
+  nix.package = pkgs.nix;
+  nix.settings.allow-import-from-derivation = true;
   home.packages = with pkgs; [
     nwg-displays
     nwg-look
     vlc
 
     ghidra
+    gimp
     pavucontrol
 
     p7zip
     nixd
+    libreoffice
   ];
-
 }

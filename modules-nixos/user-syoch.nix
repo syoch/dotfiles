@@ -13,7 +13,6 @@ in
   };
 
   config = lib.mkIf cfg.enable {
-    sops.secrets."syoch-pw".neededForUsers = true;
     programs.zsh.enable = true;
 
     users.users.syoch = {
@@ -25,7 +24,7 @@ in
         "dialout"
       ];
       shell = pkgs.zsh;
-      hashedPasswordFile = config.sops.secrets."syoch-pw".path;
+      hashedPassword = "$y$j9T$5x0E/cmThaqlolxfL2VbO1$yDRoNC4kqm10AkGMK8BNqYFZYcpLH9ltSIylUJGdvo6";
     };
   };
 }

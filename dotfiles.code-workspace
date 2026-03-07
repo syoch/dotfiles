@@ -7,5 +7,27 @@
 			"path": "config/ags"
 		}
 	],
-	"settings": {}
+	"settings": {
+		"nix.serverSettings": {
+        "nixd": {
+            "formatting": {
+                "command": [
+                    "nixfmt"
+                ],
+            },
+						"options": {
+							"nixos": {
+								"expr": "(builtins.getFlake (builtins.toString ./.)).nixosConfigurations.syoch-nix.options"
+							},
+							"home-manager": {
+								"expr": "(builtins.getFlake (builtins.toString ./.)).homeConfigurations.syoch.options"
+							}
+						}
+        }
+    },
+		"cSpell.words": [
+			"nographic"
+		]
+		// "saveAndRun": {"commands": [{"cmd": "[ -f ./run ] && ./run"}]}
+	}
 }

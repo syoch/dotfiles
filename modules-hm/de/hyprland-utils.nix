@@ -55,7 +55,6 @@ in
 
     home.sessionVariables.XDG_SESSION_TYPE = "wayland";
     home.sessionVariables.MOZ_ENABLE_WAYLAND = "1";
-    home.sessionVariables.GTK_THEME = "Adwaita;dark";
     home.sessionVariables.QT_QPA_PLATFORM = "wayland;xcb";
     home.sessionVariables.XDG_CURRENT_SESSION = "hyprland";
     home.sessionVariables.LIBSEAT_BACKEND = "logind";

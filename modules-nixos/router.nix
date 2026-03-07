@@ -35,6 +35,11 @@ in
       default = "";
       description = "End of DHCP range for downstream clients (if DHCP server is enabled).";
     };
+    extraForwardableInterfaces = lib.mkOption {
+      type = lib.types.listOf lib.types.str;
+      default = [ ];
+      description = "List of interfaces from which forwarding is allowed.";
+    };
   };
 
   config = lib.mkIf cfg.enable {
@@ -53,20 +58,26 @@ in
 
     networking.firewall.enable = true;
     networking.nftables.enable = true;
-    networking.firewall.trustedInterfaces = [
-      "${cfg.downstream.interface}"
-    ];
-    networking.firewall.extraForwardRules = [
-      "iifname ${cfg.downstream.interface} oifname ${cfg.upstream.interface} accept"
-    ];
+    networking.firewall.filterForward = true;
+    networking.firewall.extraForwardRules = lib.concatMapStringsSep "\n" (
+      iface: "iifname ${cfg.downstream.interface} oifname ${iface} accept"
+    ) (cfg.extraForwardableInterfaces ++ [ cfg.upstream.interface ]);
+    networking.firewall.trustedInterfaces = [ cfg.downstream.interface ];
 
     networking.nftables.tables.RouterNAT = {
       enable = true;
       family = "inet";
       content = ''
+        chain prerouting {
+          type nat hook prerouting priority 100; policy accept;
+          iifname "${cfg.downstream.interface}" meta nftrace set 1
+        }
         chain postrouting {
           type nat hook postrouting priority 100; policy accept;
-          iifname "${cfg.downstream.interface}" masquerade
+          oifname "${cfg.upstream.interface}" masquerade
+          ${lib.concatMapStringsSep "\n" (
+            iface: "iifname ${cfg.downstream.interface} oifname ${iface} masquerade"
+          ) cfg.extraForwardableInterfaces}
         }
       '';
     };

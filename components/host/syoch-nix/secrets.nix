@@ -2,7 +2,7 @@
 {
   sops.defaultSopsFile = ./secrets.yaml;
   sops.age.sshKeyPaths = [
-    "/home/syoch/.config/sops/age/id_syoch"
+    "/etc/nixos/syoch-nix.key"
   ];
   sops.secrets."ssh-config" = {
     owner = "syoch";

@@ -1,6 +1,6 @@
 @use "sass:color";
 
-$bg: rgba(240, 240, 240, 0.1);
+$bg: rgba(0, 0, 60, 0.4);
 $fg: #f1f1f1;
 $accent: #7aa2f7;
 $radius: 7px;
@@ -12,7 +12,6 @@ window.Bar {
     font-size: 1.1em;
 
     background-color: $bg;
-    border-radius: 0 0 24px 24px;
 
     label {
         margin: 0 8px;
@@ -50,6 +49,8 @@ window.Bar {
         margin-right: 8px;
 
         button {
+            background: transparent;
+            border-radius: transparent;
             padding: 0 4px;
         }
     }
@@ -61,7 +62,6 @@ window.Bar {
     .Media .Cover {
         min-height: 1.2em;
         min-width: 1.2em;
-        border-radius: $radius;
         background-position: center;
         background-size: contain;
     }

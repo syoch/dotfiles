@@ -17,8 +17,5 @@ in
     home.packages = with pkgs; [
       prismlauncher
     ];
-
-    home.file.".local/share/PrismLauncher/instances".source =
-      config.lib.file.mkOutOfStoreSymlink "/mnt/usbssd/NAS/Apps/_Game/PolyMC-Windows-Portable-1.4.3/instances";
   };
 }

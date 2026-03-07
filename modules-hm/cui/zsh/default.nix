@@ -88,19 +88,9 @@ in
 
         # . "$HOME/.cargo/env"
       '';
-
-      plugins = [
-        {
-          name = "powerlevel10k-config";
-          src = ./.;
-          file = "p10k.zsh";
-        }
-        {
-          name = "powerlevel10k";
-          src = pkgs.zsh-powerlevel10k;
-          file = "share/zsh-powerlevel10k/powerlevel10k.zsh-theme";
-        }
-      ];
     };
+    programs.starship.enable = true;
+    programs.starship.enableInteractive = true;
+    programs.starship.enableZshIntegration = true;
   };
 }

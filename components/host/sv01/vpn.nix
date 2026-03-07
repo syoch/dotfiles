@@ -15,6 +15,7 @@
       never-default = "true";
       route1 = "192.200.0.0/24";
       route2 = "3.33.139.32/32"; # ipconfig.me
+      route3 = "198.41.128.0/17";
     };
     wireguard = {
       listen-port = "$vpn_listen_port";

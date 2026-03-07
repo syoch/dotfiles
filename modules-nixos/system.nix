@@ -10,6 +10,19 @@ in
 {
   options.os-mod.system = {
     enable = lib.mkEnableOption "system configuration";
+    bootMode = lib.mkOption {
+      type = lib.types.enum [
+        "uefi"
+        "bios"
+      ];
+      default = "uefi";
+      description = "Enable UEFI or BIOS boot mode.";
+    };
+    bootDevice = lib.mkOption {
+      type = lib.types.str;
+      default = "nodev";
+      description = "The device to install the MBR bootloader to ('nodev' for uefi systems)";
+    };
     allowWheelToRunSudo = lib.mkEnableOption "allow users in wheel group to run sudo";
   };
 
@@ -24,12 +37,15 @@ in
       }
     ];
 
-    # UEFI
-    boot.loader.efi.efiSysMountPoint = "/boot/efi";
-    boot.loader.efi.canTouchEfiVariables = true;
-    boot.loader.grub.device = lib.mkDefault "nodev";
-    boot.loader.grub.efiSupport = true;
+    # UEFI/BIOS
+    boot.loader.efi = lib.mkIf (cfg.bootMode == "uefi") {
+      efiSysMountPoint = "/boot/efi";
+      canTouchEfiVariables = true;
+    };
+    boot.loader.grub.device = cfg.bootDevice;
+    boot.loader.grub.efiSupport = (cfg.bootMode == "uefi");
     boot.loader.grub.enable = true;
+    boot.loader.grub.useOSProber = true;
 
     # Swap
     zramSwap.enable = true;
@@ -49,9 +65,6 @@ in
       "root"
       "syoch"
       "@wheel"
-    ];
-    nix.settings.extra-sandbox-paths = [
-      "/nix/var/cache/ccache"
     ];
   };
 }

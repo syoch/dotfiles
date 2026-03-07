@@ -7,10 +7,18 @@
     wayland.enable = true;
   };
   programs.xwayland.enable = true;
+  programs.dconf.enable = true;
+
+  xdg.portal = {
+    enable = true;
+    extraPortals = [ pkgs.xdg-desktop-portal-gtk ];
+    config.common.default = "*";
+  };
 
   # Hypr
   programs.hyprland.enable = true;
   programs.hyprlock.enable = true;
+  services.hypridle.enable = true;
   environment.systemPackages = [
     pkgs.hyprcursor
   ];
@@ -27,6 +35,7 @@
   ];
 
   services.gvfs.enable = true;
+  services.gvfs.package = pkgs.gnome.gvfs;
 
   # Font
   fonts = {
