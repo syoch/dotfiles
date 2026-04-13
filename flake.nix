@@ -3,7 +3,7 @@
   description = "NixOS Configuration by syoch";
 
   inputs = {
-    nixpkgs.url = "github:nixos/nixpkgs/nixos-25.11";
+    nixpkgs.url = "github:nixos/nixpkgs/nixos-unstable";
     home-manager = {
       url = "github:nix-community/home-manager";
       inputs.nixpkgs.follows = "nixpkgs";
@@ -24,6 +24,10 @@
       inputs.nixpkgs.follows = "nixpkgs";
       inputs.home-manager.follows = "home-manager";
     };
+    pyproject-nix = {
+      url = "github:nix-community/pyproject.nix";
+      inputs.nixpkgs.follows = "nixpkgs";
+    };
   };
 
   inputs.sops-nix.url = "github:Mic92/sops-nix";
@@ -38,35 +42,86 @@
       ags,
       nixos-generators,
       nix-on-droid,
+      pyproject-nix,
       ...
     }@inputs:
-    {
-      nixosConfigurations.sv01 = nixpkgs.lib.nixosSystem {
-        specialArgs = {
-          inherit inputs;
-          inherit nixgl;
-          components = ./components;
-        };
+    let
+      pkgs = import nixpkgs {
         system = "x86_64-linux";
-        modules = [
-          ./modules-nixos
-          ./components/host/sv01
-          sops-nix.nixosModules.sops
-        ];
       };
-      nixosConfigurations.syoch-nix = nixpkgs.lib.nixosSystem {
-        specialArgs = {
-          inherit inputs;
-          inherit nixgl;
-          components = ./components;
+      nixosSystem =
+        folder:
+        nixpkgs.lib.nixosSystem {
+          specialArgs = {
+            inherit inputs;
+            inherit nixgl;
+            components = ./components;
+          };
+          system = "x86_64-linux";
+          modules = [
+            ./modules-nixos
+            ./components/host/${folder}
+            sops-nix.nixosModules.sops
+          ];
         };
-        system = "x86_64-linux";
-        modules = [
-          ./modules-nixos
-          ./components/host/syoch-nix
-          sops-nix.nixosModules.sops
-        ];
-      };
+    in
+    rec {
+      nixosConfigurations.sv01 = nixosSystem "sv01";
+      nixosConfigurations.syoch-nix = nixosSystem "syoch-nix";
+      nixosConfigurations.robo-sv01 = nixosSystem "robo-sv01";
+      nixosConfigurations.lab1-gw = nixosSystem "lab1-gw";
+      nixosConfigurations.lab0-test = nixosSystem "lab0-test";
+
+      apps.x86_64-linux."launch-robo-sv01-vm" =
+        let
+          vm = nixosConfigurations.robo-sv01.config.system.build.vm;
+          exe = pkgs.writeShellScriptBin "launch" ''
+            #!/bin/sh
+            QEMU_OPTS="$QEMU_OPTS -nographic"
+            QEMU_OPTS="$QEMU_OPTS -netdev tap,id=nd0,ifname=lab0-1,script=no,downscript=no,br=lab0"
+            QEMU_OPTS="$QEMU_OPTS -device virtio-net-pci,netdev=nd0"
+            QEMU_OPTS="$QEMU_OPTS -netdev tap,id=nd1,ifname=lab1-2,script=no,downscript=no,br=lab1"
+            QEMU_OPTS="$QEMU_OPTS -device virtio-net-pci,netdev=nd1"
+            QEMU_OPTS=$QEMU_OPTS ${vm}/bin/run-robo-sv01-vm
+          '';
+        in
+        {
+          type = "app";
+          program = "${exe}/bin/launch";
+        };
+
+      apps.x86_64-linux."launch-lab1-gw" =
+        let
+          vm = nixosConfigurations.lab1-gw.config.system.build.vm;
+          exe = pkgs.writeShellScriptBin "launch" ''
+            #!/bin/sh
+            QEMU_OPTS="$QEMU_OPTS -nographic"
+            QEMU_OPTS="$QEMU_OPTS -netdev tap,id=nd0,ifname=lab1-1,script=no,downscript=no,br=lab1"
+            QEMU_OPTS="$QEMU_OPTS -device virtio-net-pci,netdev=nd0"
+            QEMU_OPTS=$QEMU_OPTS ${vm}/bin/run-lab1-gw-vm
+          '';
+        in
+        {
+          type = "app";
+          program = "${exe}/bin/launch";
+        };
+
+      apps.x86_64-linux."launch-lab0-test" =
+        let
+          vm = nixosConfigurations.lab0-test.config.system.build.vm;
+          exe = pkgs.writeShellScriptBin "launch" ''
+            #!/bin/sh
+            QEMU_OPTS="$QEMU_OPTS -nographic"
+            QEMU_OPTS="$QEMU_OPTS -netdev tap,id=nd0,ifname=lab0-2,script=no,downscript=no,br=lab0"
+            QEMU_OPTS="$QEMU_OPTS -device virtio-net-pci,netdev=nd0"
+            QEMU_OPTS=$QEMU_OPTS ${vm}/bin/run-lab0-test-vm
+          '';
+        in
+        {
+          type = "app";
+          program = "${exe}/bin/launch";
+        };
+
       nixOnDroidConfigurations.default = nix-on-droid.lib.nixOnDroidConfiguration {
         modules = [
           ./nix-on-droid.nix
@@ -84,6 +139,20 @@
 
         home-manager-path = home-manager.outPath;
       };
+      packages.x86_64-linux.a2ln-server =
+        let
+          project = pyproject-nix.lib.project.loadPyproject {
+            projectRoot = pkgs.fetchFromGitHub {
+              owner = "patri9ck";
+              repo = "a2ln-server";
+              rev = "72635e644d509820424466bf1520b4b4e6730b0d";
+              sha256 = "sha256-5IrjegEHxd33fxJHumpWi9zXViEl2CmcGsCJdJlXCaA=";
+            };
+          };
+          python = pkgs.python3;
+          a = pyproject-nix.lib.renderers.buildPythonPackage { inherit project python; };
+        in
+        a;
       packages.x86_64-linux.adb_re = import ./__________/adb_re {
         pkgs = nixpkgs.legacyPackages.x86_64-linux;
       };
@@ -129,6 +198,8 @@
             nix-du
             ncdu
             unzip
+            ipmitool
+            wireshark-qt
           ];
         };
     };

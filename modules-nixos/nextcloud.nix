@@ -74,14 +74,17 @@ in
   };
   config = lib.mkIf cfg.enable {
     services.nextcloud.enable = true;
+    services.nextcloud.package = pkgs.nextcloud33;
     services.nextcloud.hostName = cfg.hostName;
     services.nextcloud.database.createLocally = true;
     services.nextcloud.config.dbtype = "pgsql";
     services.nextcloud.settings.datadirectory = cfg.dataDirectory;
-    services.nextcloud.maxUploadSize = "0";
+    services.nextcloud.maxUploadSize = "1G";
     services.nextcloud.extraApps = {
-      inherit (pkgs.nextcloud31Packages.apps) calendar tasks;
+      inherit (pkgs.nextcloud33Packages.apps) calendar tasks whiteboard;
+      inherit (pkgs.nextcloud33Packages.apps) deck previewgenerator;
     };
+    services.nextcloud.appstoreEnable = true;
 
     sops.secrets."${cfg.adminPasswordSecretName}" = {
       owner = "root";

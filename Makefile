@@ -9,11 +9,19 @@ SYOCH_NIX_USER := syoch
 SYOCH_NIX_HOST := syoch-nix
 SYOCH_NIX_SECRETS := ./components/host/syoch-nix/secrets.yaml
 
+ROBO_SV01_USER := syoch
+ROBO_SV01_HOST ?= 10.50.0.2
+ROBO_SV01_SECRETS := ./components/host/robo-sv01/secrets.yaml
+
 rebuild-sv01:
 	nixos-rebuild switch --flake .#sv01 \
 		--sudo --ask-sudo-password \
-		--build-host $(SV01_USER)@$(SV01_HOST) \
 		--target-host $(SV01_USER)@$(SV01_HOST) \
+
+rebuild-robo-sv01:
+	nixos-rebuild switch --flake .#robo-sv01 \
+		--sudo --ask-sudo-password \
+		--target-host $(ROBO_SV01_USER)@$(ROBO_SV01_HOST) \
 
 rebuild:
 	cd ~/dotfiles; git add .
@@ -29,6 +37,9 @@ edit-secrets:
 edit-secrets-sv01:
 	EDITOR="code --wait" nix-shell -p sops --run "sops components/host/sv01/secrets.yaml"
 
+edit-secrets-robo-sv01:
+	EDITOR="code --wait" nix-shell -p sops --run "sops components/host/robo-sv01/secrets.yaml"
+
 update-keys:
 	nix-shell -p sops --run "sops updatekeys components/host/syoch-nix/secrets.yaml"
 
@@ -40,10 +51,11 @@ iso:
 
 upgrade:
 	nix flake update
-	# $(MAKE) cleanup
 	$(MAKE) rebuild-hm
-	$(MAKE) cleanup
 	$(MAKE) rebuild
 
 cleanup:
 	scripts/cleanup
+
+robo-sv01-cat-nginx-conf:
+	ssh robo-sv01 'cat $$(systemctl cat nginx | grep ExecStart= | cut -f3 -d" " | cut -c2- | rev | cut -c2- | rev)'

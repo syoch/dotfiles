@@ -43,23 +43,26 @@ in
       noto-fonts-cjk-sans
     ];
 
-    gtk = {
-      enable = true;
-      theme = {
-        package = pkgs.orchis-theme;
-        name = "Orchis-Grey-Dark";
+    gtk =
+      let
+        theme = {
+          package = pkgs.orchis-theme;
+          name = "Orchis-Grey-Dark";
+        };
+      in
+      {
+        enable = true;
+        theme = theme;
+
+        iconTheme = {
+          package = pkgs.tela-icon-theme;
+          name = "Tela-blue-dark";
+        };
+
+        gtk4.theme = theme;
+        gtk3.extraConfig.gtk-application-prefer-dark-theme = 1;
+        gtk4.extraConfig.gtk-application-prefer-dark-theme = 1;
       };
 
-      iconTheme = {
-        package = pkgs.tela-icon-theme;
-        name = "Tela-blue-dark";
-      };
-    };
-    gtk.gtk3.extraConfig = {
-      gtk-application-prefer-dark-theme = 1;
-    };
-    gtk.gtk4.extraConfig = {
-      gtk-application-prefer-dark-theme = 1;
-    };
   };
 }

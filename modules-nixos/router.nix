@@ -90,8 +90,7 @@ in
     services.dnsmasq.settings.bind-interfaces = true;
     services.dnsmasq.settings.dhcp-option = [
       "3,${cfg.downstream.ipAddress}"
-      "6,8.8.8.8"
-      "6,8.8.4.4"
+      "6,1.1.1.1"
 
     ];
     services.dnsmasq.settings.dhcp-range = ''

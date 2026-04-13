@@ -81,10 +81,10 @@
     gnumake
     ghq
     binwalk
-    nixfmt-rfc-style
+    nixfmt
     brightnessctl
     hexyl
-    neofetch
+    fastfetch
     ddcutil
     netdiscover
     displaylink
