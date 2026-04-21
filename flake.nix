@@ -137,7 +137,6 @@
         in
         pkgs.mkShell {
           packages = with pkgs; [
-            pnpm
             amdctl
             nix-output-monitor
             pkgs.home-manager
@@ -145,7 +144,6 @@
             nix-du
             ncdu
             unzip
-            ipmitool
             wireshark-qt
           ];
         };
