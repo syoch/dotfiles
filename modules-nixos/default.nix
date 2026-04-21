@@ -13,7 +13,5 @@
     ./nfs-client.nix
     ./nfs-server.nix
     ./smb-server.nix
-    ./nextcloud.nix
-    ./nextcloud-whiteboard.nix
   ];
 }
