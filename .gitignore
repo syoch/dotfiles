@@ -1,3 +1,4 @@
 config.xml
 .direnv
 *.qcow2
+result

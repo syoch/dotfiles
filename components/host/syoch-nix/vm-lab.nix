@@ -1,16 +1,21 @@
 { lib, ... }:
 {
-  networking.networkmanager = {
-    enable = true;
-    unmanaged = [
-      "tap0"
-      "br0"
-    ];
+  virtualisation.libvirtd.allowedBridges = [
+    "virbr0"
+    "lab0"
+    "lab1"
+    "lab2"
+    "lab3"
+  ];
+  boot.kernel.sysctl = {
+    "net.bridge.bridge-nf-call-iptables" = 0;
+    "net.bridge.bridge-nf-call-ip6tables" = 0;
+    "net.bridge.bridge-nf-call-arptables" = 0;
   };
 
   systemd.network =
     let
-      tapDev = name: {
+      tapDev = name: bridgeDevName: {
         "20-${name}" = {
           enable = true;
           netdevConfig.Kind = "tap";
@@ -45,11 +50,9 @@
         labName:
         lib.mkMerge [
           (bridgeDev labName)
-          (tapDev "${labName}-0")
-          (tapDev "${labName}-1")
-          (tapDev "${labName}-2")
-          (tapDev "${labName}-3")
-          (tapDev "${labName}-4")
+          (tapDev "${labName}-0" labName)
+          (tapDev "${labName}-1" labName)
+          (tapDev "${labName}-2" labName)
         ];
       labNetworks =
         labName: address:
@@ -58,8 +61,6 @@
           (tapNetwork "${labName}-0" labName)
           (tapNetwork "${labName}-1" labName)
           (tapNetwork "${labName}-2" labName)
-          (tapNetwork "${labName}-3" labName)
-          (tapNetwork "${labName}-4" labName)
         ];
     in
     {
@@ -73,16 +74,16 @@
       ];
       networks = lib.mkMerge [
         (labNetworks "lab0" [
-          # "10.50.99.99/16"
+          "10.50.254.254/16"
         ])
         (labNetworks "lab1" [
-          # "10.51.99.99/16"
+          "10.61.254.254/16"
         ])
         (labNetworks "lab2" [
-          # "10.52.99.99/16"
+          "10.62.254.254/16"
         ])
         (labNetworks "lab3" [
-          # "10.53.99.99/16"
+          "10.63.254.254/16"
         ])
       ];
     };

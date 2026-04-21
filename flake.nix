@@ -65,62 +65,9 @@
           ];
         };
     in
-    rec {
+    {
       nixosConfigurations.sv01 = nixosSystem "sv01";
       nixosConfigurations.syoch-nix = nixosSystem "syoch-nix";
-      nixosConfigurations.robo-sv01 = nixosSystem "robo-sv01";
-      nixosConfigurations.lab1-gw = nixosSystem "lab1-gw";
-      nixosConfigurations.lab0-test = nixosSystem "lab0-test";
-
-      apps.x86_64-linux."launch-robo-sv01-vm" =
-        let
-          vm = nixosConfigurations.robo-sv01.config.system.build.vm;
-          exe = pkgs.writeShellScriptBin "launch" ''
-            #!/bin/sh
-            QEMU_OPTS="$QEMU_OPTS -nographic"
-            QEMU_OPTS="$QEMU_OPTS -netdev tap,id=nd0,ifname=lab0-1,script=no,downscript=no,br=lab0"
-            QEMU_OPTS="$QEMU_OPTS -device virtio-net-pci,netdev=nd0"
-            QEMU_OPTS="$QEMU_OPTS -netdev tap,id=nd1,ifname=lab1-2,script=no,downscript=no,br=lab1"
-            QEMU_OPTS="$QEMU_OPTS -device virtio-net-pci,netdev=nd1"
-            QEMU_OPTS=$QEMU_OPTS ${vm}/bin/run-robo-sv01-vm
-          '';
-        in
-        {
-          type = "app";
-          program = "${exe}/bin/launch";
-        };
-
-      apps.x86_64-linux."launch-lab1-gw" =
-        let
-          vm = nixosConfigurations.lab1-gw.config.system.build.vm;
-          exe = pkgs.writeShellScriptBin "launch" ''
-            #!/bin/sh
-            QEMU_OPTS="$QEMU_OPTS -nographic"
-            QEMU_OPTS="$QEMU_OPTS -netdev tap,id=nd0,ifname=lab1-1,script=no,downscript=no,br=lab1"
-            QEMU_OPTS="$QEMU_OPTS -device virtio-net-pci,netdev=nd0"
-            QEMU_OPTS=$QEMU_OPTS ${vm}/bin/run-lab1-gw-vm
-          '';
-        in
-        {
-          type = "app";
-          program = "${exe}/bin/launch";
-        };
-
-      apps.x86_64-linux."launch-lab0-test" =
-        let
-          vm = nixosConfigurations.lab0-test.config.system.build.vm;
-          exe = pkgs.writeShellScriptBin "launch" ''
-            #!/bin/sh
-            QEMU_OPTS="$QEMU_OPTS -nographic"
-            QEMU_OPTS="$QEMU_OPTS -netdev tap,id=nd0,ifname=lab0-2,script=no,downscript=no,br=lab0"
-            QEMU_OPTS="$QEMU_OPTS -device virtio-net-pci,netdev=nd0"
-            QEMU_OPTS=$QEMU_OPTS ${vm}/bin/run-lab0-test-vm
-          '';
-        in
-        {
-          type = "app";
-          program = "${exe}/bin/launch";
-        };
 
       nixOnDroidConfigurations.default = nix-on-droid.lib.nixOnDroidConfiguration {
         modules = [
