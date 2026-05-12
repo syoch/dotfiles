@@ -14,6 +14,7 @@ in
 
   config = mkIf cfg.enable {
     programs.firefox.enable = true;
+    programs.firefox.configPath = ".mozilla/firefox";
     programs.firefox.languagePacks = [
       "jp"
       "ja-JP"

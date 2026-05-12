@@ -4,6 +4,7 @@
 
   inputs = {
     nixpkgs.url = "github:nixos/nixpkgs/nixos-unstable";
+    nixpkgs-2405.url = "github:nixos/nixpkgs/nixos-24.05";
     home-manager = {
       url = "github:nix-community/home-manager";
       inputs.nixpkgs.follows = "nixpkgs";
@@ -36,6 +37,7 @@
   outputs =
     {
       nixpkgs,
+      nixpkgs-2405,
       home-manager,
       sops-nix,
       nixgl,
@@ -49,6 +51,10 @@
       pkgs = import nixpkgs {
         system = "x86_64-linux";
       };
+      homeManagerModules = [
+        ./modules-hm
+        ags.homeManagerModules.default
+      ];
       nixosSystem =
         folder:
         nixpkgs.lib.nixosSystem {
@@ -71,37 +77,25 @@
 
       nixOnDroidConfigurations.default = nix-on-droid.lib.nixOnDroidConfiguration {
         modules = [
-          ./nix-on-droid.nix
+          ./components/droid/p30t
+          {
+            home-manager = {
+              config = ./components/home/syoch-p30t.nix;
+              backupFileExtension = "hm-bak";
+              useGlobalPkgs = true;
+              sharedModules = homeManagerModules;
+            };
+          }
         ];
 
-        extraSpecialArgs = {
-        };
+        extraSpecialArgs = { };
         pkgs = import nixpkgs {
           system = "aarch64-linux";
 
-          overlays = [
-            nix-on-droid.overlays.default
-          ];
+          overlays = [ nix-on-droid.overlays.default ];
         };
 
         home-manager-path = home-manager.outPath;
-      };
-      packages.x86_64-linux.a2ln-server =
-        let
-          project = pyproject-nix.lib.project.loadPyproject {
-            projectRoot = pkgs.fetchFromGitHub {
-              owner = "patri9ck";
-              repo = "a2ln-server";
-              rev = "72635e644d509820424466bf1520b4b4e6730b0d";
-              sha256 = "sha256-5IrjegEHxd33fxJHumpWi9zXViEl2CmcGsCJdJlXCaA=";
-            };
-          };
-          python = pkgs.python3;
-          a = pyproject-nix.lib.renderers.buildPythonPackage { inherit project python; };
-        in
-        a;
-      packages.x86_64-linux.adb_re = import ./__________/adb_re {
-        pkgs = nixpkgs.legacyPackages.x86_64-linux;
       };
       packages.x86_64-linux.iso = nixos-generators.nixosGenerate {
         system = "x86_64-linux";
@@ -122,31 +116,21 @@
         extraSpecialArgs = {
           inherit inputs;
           inherit nixgl;
-          components = ./components;
         };
-        modules = [
-          ./modules-hm
-
-          ags.homeManagerModules.default
-          ./components/home/syoch
+        modules = homeManagerModules // [ ./components/home/syoch ];
+      };
+      devShells.x86_64-linux.default = pkgs.mkShell {
+        packages = with pkgs; [
+          amdctl
+          nix-output-monitor
+          pkgs.home-manager
+          nix-tree
+          nix-du
+          ncdu
+          unzip
+          wireshark-qt
         ];
       };
-      devShells.x86_64-linux.default =
-        let
-          pkgs = nixpkgs.legacyPackages.x86_64-linux;
-        in
-        pkgs.mkShell {
-          packages = with pkgs; [
-            amdctl
-            nix-output-monitor
-            pkgs.home-manager
-            nix-tree
-            nix-du
-            ncdu
-            unzip
-            wireshark-qt
-          ];
-        };
     };
 
 }

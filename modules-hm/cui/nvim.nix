@@ -1,6 +1,7 @@
 {
   lib,
   config,
+  pkgs,
   ...
 }:
 with lib;
@@ -15,7 +16,7 @@ in
 
   config = mkIf cfg.enable {
     programs.neovim = {
-      enable = true;
+      enable = false;
       defaultEditor = true;
       viAlias = true;
       vimAlias = true;
@@ -23,6 +24,7 @@ in
       withPython3 = true;
       vimdiffAlias = true;
     };
-    home.file.".config/nvim".source = mkOutOfStoreSymlink "${config.home.homeDirectory}/dotfiles/nvim";
+    home.packages = [ pkgs.neovim ];
+    xdg.configFile."nvim".source = mkOutOfStoreSymlink "${config.home.homeDirectory}/dotfiles/nvim";
   };
 }

@@ -1,4 +1,5 @@
 {
+  pkgs,
   lib,
   config,
   ...
@@ -15,5 +16,8 @@ in
     services.gpg-agent.enable = true;
     services.gpg-agent.enableZshIntegration = true;
     services.gpg-agent.enableSshSupport = true;
+    services.gpg-agent.pinentry.package = pkgs.pinentry-all;
+    programs.gpg.enable = true;
+    home.packages = [ pkgs.gnupg ];
   };
 }

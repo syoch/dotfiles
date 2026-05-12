@@ -89,8 +89,9 @@
 
   services.dnsmasq = {
     enable = true;
+    settings.bind-interfaces = true;
     settings.interface = "lo";
-    settings.listen-address = "127.0.0.1";
+    settings.listen-address = "127.0.0.50";
     servers = [
       "/nnctrobo.internal/127.0.0.53#5053"
       "/syoch.internal/10.42.0.1"
@@ -98,7 +99,7 @@
       "1.0.0.1"
     ];
   };
-  networking.nameservers = [ "127.0.0.1" ];
+  networking.nameservers = [ "127.0.0.50" ];
 
   programs.steam = {
     enable = true;
