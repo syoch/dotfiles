@@ -129,6 +129,9 @@
           ncdu
           unzip
           wireshark-qt
+
+          pkgs.android-tools
+          pkgs.scrcpy
         ];
       };
     };
