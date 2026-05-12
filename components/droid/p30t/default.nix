@@ -11,6 +11,7 @@
   ];
 
   environment.etcBackupExtension = ".bak";
+  services.sshd.enable = true;
 
   nix.package = pkgs.nix;
   nix.extraOptions = ''
