@@ -1,0 +1,12 @@
+#!/usr/bin/env bash
+set -e
+
+if [ -f dotfiles.tgz ]; then
+  /nix/store/923k4wjp*/bin/gzip -d dotfiles.tgz
+  rm -rf dotfiles
+  mkdir dotfiles
+  mv dotfiles.tar dotfiles
+  sh -c 'cd dotfiles && /nix/store/47v99h37*/bin/tar xf dotfiles.tar'
+fi
+
+nix-on-droid switch --flake ~/dotfiles -v

@@ -4,10 +4,14 @@
 
   inputs = {
     nixpkgs.url = "github:nixos/nixpkgs/nixos-unstable";
-    nixpkgs-2405.url = "github:nixos/nixpkgs/nixos-24.05";
+    nixpkgs-2511.url = "github:nixos/nixpkgs/nixos-25.11";
     home-manager = {
       url = "github:nix-community/home-manager";
       inputs.nixpkgs.follows = "nixpkgs";
+    };
+    home-manager-2511 = {
+      url = "github:nix-community/home-manager/release-25.11";
+      inputs.nixpkgs.follows = "nixpkgs-2511";
     };
     astal.url = "github:aylur/astal";
     ags.url = "github:aylur/ags";
@@ -22,8 +26,8 @@
 
     nix-on-droid = {
       url = "github:nix-community/nix-on-droid/release-24.05";
-      inputs.nixpkgs.follows = "nixpkgs";
-      inputs.home-manager.follows = "home-manager";
+      inputs.nixpkgs.follows = "nixpkgs-2511";
+      inputs.home-manager.follows = "home-manager-2511";
     };
     pyproject-nix = {
       url = "github:nix-community/pyproject.nix";
@@ -37,8 +41,9 @@
   outputs =
     {
       nixpkgs,
-      nixpkgs-2405,
+      nixpkgs-2511,
       home-manager,
+      home-manager-2511,
       sops-nix,
       nixgl,
       ags,
@@ -76,26 +81,12 @@
       nixosConfigurations.syoch-nix = nixosSystem "syoch-nix";
 
       nixOnDroidConfigurations.default = nix-on-droid.lib.nixOnDroidConfiguration {
+        pkgs = import nixpkgs-2511 { system = "aarch64-linux"; };
         modules = [
           ./components/droid/p30t
-          {
-            home-manager = {
-              config = ./components/home/syoch-p30t.nix;
-              backupFileExtension = "hm-bak";
-              useGlobalPkgs = true;
-              sharedModules = homeManagerModules;
-            };
-          }
         ];
 
-        extraSpecialArgs = { };
-        pkgs = import nixpkgs {
-          system = "aarch64-linux";
-
-          overlays = [ nix-on-droid.overlays.default ];
-        };
-
-        home-manager-path = home-manager.outPath;
+        home-manager-path = home-manager-2511.outPath;
       };
       packages.x86_64-linux.iso = nixos-generators.nixosGenerate {
         system = "x86_64-linux";
@@ -132,6 +123,7 @@
 
           pkgs.android-tools
           pkgs.scrcpy
+          nix-on-droid.packages.x86_64-linux.nix-on-droid
         ];
       };
     };
