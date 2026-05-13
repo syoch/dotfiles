@@ -1,24 +1,61 @@
 {
+  config,
   pkgs,
   ...
 }:
 {
   system.stateVersion = "24.05";
 
-  environment.packages = [
-    pkgs.neovim
-    pkgs.hostname
-    pkgs.zsh
+  imports = [
+    ./services.nix
+    ./shell.nix
+    ./sshd.nix
   ];
-  user.shell = "${pkgs.zsh}/bin/zsh";
+
+  services.enable = true;
+
+  environment.packages = [
+    pkgs.openssh
+    pkgs.git
+    pkgs.wget
+    pkgs.neovim
+    pkgs.ps
+    pkgs.syncthing
+    pkgs.p7zip
+    pkgs.file
+    pkgs.clang
+    pkgs.gnumake
+  ];
+  user.uid = 10003;
+  user.gid = 10003;
+
+  shell.enable = true;
+  services.executables.syncthing = "${pkgs.syncthing}/bin/syncthing";
+
+  terminal.font = "${config.user.home}/dotfiles/Assets/Firple-Regular.ttf";
 
   environment.etcBackupExtension = ".bak";
-  services.sshd.enable = true;
+
+  build.extraProotOptions = [
+    "--bind=/system/bin/su:/system/bin/su"
+  ];
 
   nix.package = pkgs.nix;
   nix.extraOptions = ''
     experimental-features = nix-command flakes
   '';
+
+  home-manager = {
+    config = {
+      imports = [
+        ./home.nix
+        ../../../modules-hm/cui
+        ../../../modules-hm/services
+      ];
+    };
+    backupFileExtension = "hm-bak";
+    useGlobalPkgs = true;
+  };
 
   time.timeZone = "Asia/Tokyo";
 }
