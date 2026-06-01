@@ -89,69 +89,94 @@
   virtualisation.podman.enable = true;
   systemd.tmpfiles.rules = [
     "d /srv/xwiki 0700 999 999 - -"
+    "d /srv/syoch-portal 0700 syoch-portal syoch-portal - -"
   ];
   services.postgresql = {
-    ensureDatabases = [ "xwiki" ];
+    ensureDatabases = [
+      "xwiki"
+      "syoch-portal"
+    ];
     ensureUsers = [
       {
         name = "xwiki";
+        ensureDBOwnership = true;
+      }
+      {
+        name = "syoch-portal";
         ensureDBOwnership = true;
       }
     ];
     enableTCPIP = true;
     authentication = ''
       host xwiki xwiki 10.88.0.1/16 scram-sha-256
+      host syoch-portal syoch-portal 127.0.0.1/32 scram-sha-256
     '';
   };
   networking.firewall.interfaces."podman0".allowedTCPPorts = [ 5432 ];
   virtualisation.oci-containers.backend = "podman";
+  sops.secrets."portal-db-password" = {
+    owner = "root";
+    path = "/etc/nixos/portal-db-password";
+  };
+  sops.secrets."xwiki-db-password" = {
+    owner = "root";
+    path = "/etc/nixos/xwiki-db-password";
+  };
+  systemd.services.postgresql-setup-passwords = {
+    description = "Set PostgreSQL passwords from SOPS secrets";
+
+    requires = [ "postgresql.service" ];
+    after = [ "postgresql.service" ];
+
+    serviceConfig = {
+      User = "postgres";
+      Group = "postgres";
+      Type = "oneshot";
+      RemainAfterExit = true;
+    };
+
+    script = ''
+      set -e
+      psql -c "ALTER USER xwiki WITH PASSWORD '$(cat ${config.sops.secrets."xwiki-db-password".path})';"
+      psql -c "ALTER USER syoch-portal WITH PASSWORD '$(cat ${
+        config.sops.secrets."portal-db-password".path
+      })';"
+    '';
+  };
+  sops.secrets."xwiki-env" = {
+    owner = "root";
+    path = "/etc/nixos/xwiki-env";
+  };
   virtualisation.oci-containers.containers.xwiki = {
     image = "docker.io/library/xwiki:lts-postgres-tomcat";
     ports = [ "8080:8080" ];
 
-    environment = {
-      DB_USER = "xwiki";
-      DB_PASSWORD = "your_secret_password";
-      DB_HOST = "10.88.0.1";
-      DB_DATABASE = "xwiki";
-    };
+    environmentFiles = [
+      config.sops.secrets."xwiki-env".path
+    ];
 
     volumes = [
       "/srv/xwiki:/usr/local/xwiki"
     ];
   };
 
+  sops.secrets."portal-config" = {
+    owner = "syoch-portal";
+    path = "/etc/nixos/portal-config";
+  };
+
   services.syoch-portal = {
     enable = true;
-    configFile = pkgs.writeText "config.json" (
-      builtins.toJSON {
-        database = {
-          url = "sqlite:////srv/syoch-portal/database.db";
-          sqlite_wal = true;
-        };
-        server = {
-          port = 8000;
-          host = "127.0.0.1";
-        };
-        extensions = [
-          {
-            module = "servers.storage_manager";
-            class = "StorageManagerExtension";
-            config = {
-              uploads_dir = "/srv/syoch-portal/uploads";
-            };
-          }
-          {
-            module = "servers.obtainium_repo";
-            class = "ObtainiumRepoExtension";
-          }
-        ];
-      }
-    );
+    configFile = config.sops.secrets."portal-config".path;
 
-    readWritePaths = [
-      "/srv/syoch-portal"
-    ];
+    user = "syoch-portal";
+    group = "syoch-portal";
+  };
+  services.nginx.virtualHosts."portal.syoch.org" = {
+    locations."/" = {
+      proxyPass = "http://127.0.0.1:8000";
+      proxyWebsockets = true;
+    };
   };
 
   environment.systemPackages = with pkgs; [
