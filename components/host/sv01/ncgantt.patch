@@ -1,0 +1,56 @@
+--- a/css/ncgantt.css
++++ b/css/ncgantt.css
+@@ -380,6 +380,37 @@
+     }
+ }
+
++.app-ncgantt .gannt_container,
++.app-ncgantt #ganntContainer,
++.app-ncgantt .grid-header,
++.app-ncgantt .side-header,
++.app-ncgantt .status-section {
++  background-color: var(--color-main-background) !important;
++  color: var(--color-main-text) !important;
++}
++
++.app-ncgantt .grid-header,
++.app-ncgantt .side-header {
++  border-color: var(--color-border) !important;
++}
++
++.app-ncgantt .today-button,
++.app-ncgantt .viewmode-select {
++  background-color: var(--color-background-dark) !important;
++  color: var(--color-main-text) !important;
++  border-color: var(--color-border) !important;
++}
++
++.app-ncgantt .today-button:hover,
++.app-ncgantt .viewmode-select:hover {
++  background-color: var(--color-background-hover) !important;
++}
++
++.app-ncgantt .html-md-icon-toggle,
++.app-ncgantt .md-html-icon-toggle {
++  background-color: var(--color-main-background) !important;
++}
++
+ /* Focus styles for accessibility */
+ /* .app-ncgantt {
+     button:focus,
+
+--- a/js/ncgantt_NCGantt.js
++++ b/js/ncgantt_NCGantt.js
+@@ -186,9 +186,9 @@
+
+         if (this.config.isNextcloud) {
+             el.classList.add("hidden");
+-            this.symbols.edit =    '<img src="../../custom_apps/ncgantt/img/pencil2.svg">';
+-            this.symbols.confirm = '<img src="../../custom_apps/ncgantt/img/check-square-outlined.svg">';
+-            this.symbols.close =   '<img src="../../custom_apps/ncgantt/img/close-outlined-cross.svg">';
++            this.symbols.edit =    '<img src="../../nix-apps/ncgantt/img/pencil2.svg">';
++            this.symbols.confirm = '<img src="../../nix-apps/ncgantt/img/check-square-outlined.svg">';
++            this.symbols.close =   '<img src="../../nix-apps/ncgantt/img/close-outlined-cross.svg">';
+         } else {
+             el.classList.remove("hidden");
+         }
