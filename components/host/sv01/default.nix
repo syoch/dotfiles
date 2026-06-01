@@ -37,6 +37,7 @@
   users.groups.nas-agent = { };
   users.users.syoch.extraGroups = [ "nas-agent" ];
   users.users.nextcloud.extraGroups = [ "nas-agent" ];
+  security.sudo.wheelNeedsPassword = false;
 
   os-mod.router = {
     enable = true;
@@ -117,6 +118,39 @@
 
     volumes = [
       "/srv/xwiki:/usr/local/xwiki"
+    ];
+  };
+
+  services.syoch-portal = {
+    enable = true;
+    configFile = pkgs.writeText "config.json" (
+      builtins.toJSON {
+        database = {
+          url = "sqlite:////srv/syoch-portal/database.db";
+          sqlite_wal = true;
+        };
+        server = {
+          port = 8000;
+          host = "127.0.0.1";
+        };
+        extensions = [
+          {
+            module = "servers.storage_manager";
+            class = "StorageManagerExtension";
+            config = {
+              uploads_dir = "/srv/syoch-portal/uploads";
+            };
+          }
+          {
+            module = "servers.obtainium_repo";
+            class = "ObtainiumRepoExtension";
+          }
+        ];
+      }
+    );
+
+    readWritePaths = [
+      "/srv/syoch-portal"
     ];
   };
 

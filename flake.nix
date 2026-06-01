@@ -38,6 +38,8 @@
   inputs.sops-nix.url = "github:Mic92/sops-nix";
   inputs.sops-nix.inputs.nixpkgs.follows = "nixpkgs";
 
+  inputs.syoch-infra.url = "github:syoch/infrastructure";
+
   outputs =
     {
       nixpkgs,
@@ -50,6 +52,7 @@
       nixos-generators,
       nix-on-droid,
       pyproject-nix,
+      syoch-infra,
       ...
     }@inputs:
     let
@@ -73,6 +76,7 @@
             ./modules-nixos
             ./components/host/${folder}
             sops-nix.nixosModules.sops
+            syoch-infra.nixosModules.syoch-portal
           ];
         };
     in
