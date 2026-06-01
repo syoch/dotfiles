@@ -108,7 +108,7 @@
           inherit inputs;
           inherit nixgl;
         };
-        modules = homeManagerModules // [ ./components/home/syoch ];
+        modules = homeManagerModules ++ [ ./components/home/syoch ];
       };
       devShells.x86_64-linux.default = pkgs.mkShell {
         packages = with pkgs; [

@@ -50,5 +50,7 @@
     p7zip
     nixd
     libreoffice
+    imhex
+    github-cli
   ];
 }

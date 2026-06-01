@@ -47,10 +47,10 @@ cleanup:
 
 droid-sync-update-adb:
 	adb push scripts/update-nix-on-droid /data/data/com.termux.nix/files/home/update.sh
-	adb shell chown 10003:10003 /data/data/com.termux.nix/files/home/update.sh
+	adb shell chown 10007:10007 /data/data/com.termux.nix/files/home/update.sh
 
 droid-sync-dotfiles-adb:
 	tar czf dotfiles.tgz --exclude=dotfiles.tgz --exclude=winapps --exclude=.git --exclude=.direnv .
-	adb push dotfiles.tgz /data/data/com.termux.nix/files/home/dotfiles.tgz
-	adb shell chown 10003:10003 /data/data/com.termux.nix/files/home/dotfiles.tgz
-	rm dotfiles.tgz
+	adb push dotfiles.tgz /data/local/tmp/dotfiles.tgz
+	adb shell su -c cp /data/local/tmp/dotfiles.tgz /data/data/com.termux.nix/files/home/dotfiles.tgz
+	adb shell su -c chown 10007:10007 /data/data/com.termux.nix/files/home/dotfiles.tgz
