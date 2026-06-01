@@ -181,6 +181,7 @@
     after = [ "postgresql-setup-passwords.service" ];
   };
   services.nginx.clientMaxBodySize = "1G";
+  services.nginx.recommendedProxySettings = true;
   services.nginx.virtualHosts."portal.syoch.org" = {
     locations."/" = {
       proxyPass = "http://127.0.0.1:8000";
