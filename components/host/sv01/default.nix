@@ -110,23 +110,27 @@
     authentication = ''
       host xwiki xwiki 10.88.0.1/16 scram-sha-256
       host syoch-portal syoch-portal 127.0.0.1/32 scram-sha-256
+      host postgres postgres 10.42.0.0/16 scram-sha-256
     '';
   };
   networking.firewall.interfaces."podman0".allowedTCPPorts = [ 5432 ];
   virtualisation.oci-containers.backend = "podman";
   sops.secrets."portal-db-password" = {
-    owner = "root";
+    owner = "postgres";
     path = "/etc/nixos/portal-db-password";
   };
   sops.secrets."xwiki-db-password" = {
-    owner = "root";
+    owner = "postgres";
     path = "/etc/nixos/xwiki-db-password";
   };
   systemd.services.postgresql-setup-passwords = {
     description = "Set PostgreSQL passwords from SOPS secrets";
+    path = [ pkgs.postgresql ];
 
     requires = [ "postgresql.service" ];
     after = [ "postgresql.service" ];
+    wantedBy = [ "multi-user.target" ];
+    before = [ "syoch-portal.service" ];
 
     serviceConfig = {
       User = "postgres";
@@ -137,10 +141,10 @@
 
     script = ''
       set -e
-      psql -c "ALTER USER xwiki WITH PASSWORD '$(cat ${config.sops.secrets."xwiki-db-password".path})';"
-      psql -c "ALTER USER syoch-portal WITH PASSWORD '$(cat ${
-        config.sops.secrets."portal-db-password".path
-      })';"
+      xwiki_password="$(cat ${config.sops.secrets."xwiki-db-password".path})"
+      portal_password="$(cat ${config.sops.secrets."portal-db-password".path})"
+      psql -v ON_ERROR_STOP=1 -c "ALTER USER \"xwiki\" WITH PASSWORD '$xwiki_password';"
+      psql -v ON_ERROR_STOP=1 -c "ALTER USER \"syoch-portal\" WITH PASSWORD '$portal_password';"
     '';
   };
   sops.secrets."xwiki-env" = {
@@ -172,11 +176,17 @@
     user = "syoch-portal";
     group = "syoch-portal";
   };
+  systemd.services.syoch-portal = {
+    requires = [ "postgresql-setup-passwords.service" ];
+    after = [ "postgresql-setup-passwords.service" ];
+  };
+  services.nginx.clientMaxBodySize = "1G";
   services.nginx.virtualHosts."portal.syoch.org" = {
     locations."/" = {
       proxyPass = "http://127.0.0.1:8000";
       proxyWebsockets = true;
     };
+
   };
 
   environment.systemPackages = with pkgs; [

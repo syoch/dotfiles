@@ -551,11 +551,11 @@
         "nixpkgs": "nixpkgs_4"
       },
       "locked": {
-        "lastModified": 1780318035,
-        "narHash": "sha256-EU0Lpx21AWS5EvJKdC7YVihc58WXYDz7FqZxPlrq7Z8=",
+        "lastModified": 1780319029,
+        "narHash": "sha256-c6IT+qeaHA8WTCvmqPCsy+2dmZ3tVO79rA1FS4Xbgbw=",
         "owner": "syoch",
         "repo": "infrastructure",
-        "rev": "75263040f52d5c8c06ee5887c4faf06be92fd0ec",
+        "rev": "c8f1d52408c2db8f16e81b8ffd6873948f01e1f5",
         "type": "github"
       },
       "original": {
