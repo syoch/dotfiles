@@ -11,7 +11,7 @@ SYOCH_NIX_SECRETS := ./components/host/syoch-nix/secrets.yaml
 
 rebuild-sv01:
 	nixos-rebuild switch --flake .#sv01 \
-		--sudo \
+		--sudo --ask-sudo-password \
 		--target-host $(SV01_USER)@$(SV01_HOST) \
 
 rebuild:
