@@ -8,12 +8,6 @@
     owner = "root";
     path = "/etc/nixos/sv01.nw.env";
   };
-  sops.secrets."nginx-portal-basic-auth" = {
-    owner = "nginx";
-    group = "nginx";
-    path = "/etc/nixos/nginx-portal-basic-auth";
-    mode = "0440";
-  };
   sops.secrets."cloudflared-account-cred" = {
     owner = "root";
     path = "/etc/nixos/cfd-cert.pem";

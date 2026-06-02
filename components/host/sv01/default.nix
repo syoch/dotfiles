@@ -183,17 +183,12 @@
   services.nginx.clientMaxBodySize = "1G";
   services.nginx.recommendedProxySettings = true;
   services.nginx.recommendedTlsSettings = true;
-  services.nginx.appendHttpConfig = ''
-    limit_req_zone $binary_remote_addr zone=portal_auth:10m rate=10r/s;
-  '';
   services.nginx.virtualHosts."portal.syoch.org" = {
     listenAddresses = [
       "127.0.0.1"
       "100.96.100.1"
     ];
-    basicAuthFile = config.sops.secrets."nginx-portal-basic-auth".path;
     extraConfig = ''
-      limit_req zone=portal_auth burst=20 nodelay;
       add_header Strict-Transport-Security "max-age=31536000; includeSubDomains" always;
       add_header X-Frame-Options "DENY" always;
       add_header X-Content-Type-Options "nosniff" always;
