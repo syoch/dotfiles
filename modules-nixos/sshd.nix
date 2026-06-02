@@ -27,11 +27,19 @@ in
 
     services.fail2ban = {
       enable = true;
-      jails.sshd.settings = {
-        enabled = true;
-        maxretry = 3;
-        findtime = 600;
-        bantime = 3600;
+      jails = {
+        sshd.settings = {
+          enabled = true;
+          maxretry = 3;
+          findtime = 600;
+          bantime = 3600;
+        };
+        nginx-http-auth.settings = {
+          enabled = true;
+          maxretry = 5;
+          findtime = 600;
+          bantime = 3600;
+        };
       };
     };
   };
