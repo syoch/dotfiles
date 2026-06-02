@@ -37,7 +37,7 @@
   users.groups.nas-agent = { };
   users.users.syoch.extraGroups = [ "nas-agent" ];
   users.users.nextcloud.extraGroups = [ "nas-agent" ];
-  security.sudo.wheelNeedsPassword = false;
+  security.sudo.wheelNeedsPassword = true;
 
   os-mod.router = {
     enable = true;

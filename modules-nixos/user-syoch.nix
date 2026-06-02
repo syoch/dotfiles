@@ -24,7 +24,10 @@ in
         "dialout"
       ];
       shell = pkgs.zsh;
-      hashedPassword = "$y$j9T$5x0E/cmThaqlolxfL2VbO1$yDRoNC4kqm10AkGMK8BNqYFZYcpLH9ltSIylUJGdvo6";
+      openssh.authorizedKeys.keys = [
+        "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAILacK4KYMvzARCSG8v7H8KCeZIzXapkNB0ZwI70GaasV syoch-MyDevices"
+        "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIBzarRB8V8RX0C2AGP6OqE3MUuLlq6AS8ygtao6+Hzif syoch@syoch-nix (recovery key for sv01)"
+      ];
     };
   };
 }
