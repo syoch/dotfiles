@@ -189,7 +189,7 @@
   services.nginx.virtualHosts."portal.syoch.org" = {
     listenAddresses = [
       "127.0.0.1"
-      "100.64.0.0/10"
+      "100.96.100.1"
     ];
     basicAuthFile = config.sops.secrets."nginx-portal-basic-auth".path;
     extraConfig = ''
