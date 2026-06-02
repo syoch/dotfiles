@@ -182,12 +182,29 @@
   };
   services.nginx.clientMaxBodySize = "1G";
   services.nginx.recommendedProxySettings = true;
+  services.nginx.recommendedTlsSettings = true;
+  security.acme.acceptTerms = true;
   services.nginx.virtualHosts."portal.syoch.org" = {
+    listenAddresses = [
+      "100.64.0.0/10"
+      "127.0.0.1"
+      "::1"
+    ];
+    enableACME = true;
+    forceSSL = true;
+    basicAuthFile = config.sops.secrets."nginx-portal-basic-auth".path;
+    extraConfig = ''
+      add_header Strict-Transport-Security "max-age=31536000; includeSubDomains" always;
+      add_header X-Frame-Options "DENY" always;
+      add_header X-Content-Type-Options "nosniff" always;
+      add_header Referrer-Policy "no-referrer" always;
+      add_header Permissions-Policy "interest-cohort=()" always;
+      add_header Content-Security-Policy "default-src 'self'; img-src 'self' data:; style-src 'self' 'unsafe-inline'; script-src 'self'" always;
+    '';
     locations."/" = {
       proxyPass = "http://127.0.0.1:8000";
       proxyWebsockets = true;
     };
-
   };
 
   environment.systemPackages = with pkgs; [
