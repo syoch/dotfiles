@@ -53,13 +53,7 @@
     imhex
     github-cli
   ];
-  programs.opencode = {
-    enable = true;
-    settings.plugin = [ "opencode-gemini-auth@latest" ];
-    settings.permission = {
-      webfetch = "allow";
-      websearch = "allow";
-    };
-  };
+  hm-module.opencode.enable = true;
+  hm-module.opencode.tasks.enable = true;
   programs.zsh.shellAliases."opencode" = "OPENCODE_ENABLE_EXA=1 opencode";
 }
