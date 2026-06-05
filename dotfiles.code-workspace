@@ -7,6 +7,9 @@
 			"path": "config/ags"
 		},
 		{
+			"path": "config/hypr"
+		},
+		{
 			"path": "../infrastructure"
 		}
 	],
@@ -30,7 +33,10 @@
 		},
 		"cSpell.words": [
 			"nographic"
-		]
+		],
 		// "saveAndRun": {"commands": [{"cmd": "[ -f ./run ] && ./run"}]}
+		"Lua.workspace.library": [
+			"/usr/share/hypr/stubs"
+		]
 	}
 }

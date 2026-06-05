@@ -14,6 +14,8 @@ in
   };
 
   config = mkIf cfg.enable {
+    wayland.windowManager.hyprland.systemd.enable = false;
+
     # Desktop manager trait
     systemd.user.targets.desktop-session = {
       Unit = {

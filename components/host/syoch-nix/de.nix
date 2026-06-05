@@ -17,6 +17,7 @@
 
   # Hypr
   programs.hyprland.enable = true;
+  programs.hyprland.withUWSM = true;
   programs.hyprlock.enable = true;
   services.hypridle.enable = true;
   environment.systemPackages = [
