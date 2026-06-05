@@ -115,16 +115,16 @@
         modules = homeManagerModules ++ [ ./components/home/syoch ];
       };
       devShells.x86_64-linux.default = pkgs.mkShell {
-        packages = with pkgs; [
-          amdctl
-          nix-output-monitor
+        packages = [
+          pkgs.amdctl
+          pkgs.nix-output-monitor
           pkgs.home-manager
-          nix-tree
-          nix-du
-          ncdu
-          unzip
-          wireshark-qt
-
+          pkgs.nix-tree
+          pkgs.nix-du
+          pkgs.ncdu
+          pkgs.unzip
+          pkgs.wireshark-qt
+          pkgs.bun
           pkgs.android-tools
           pkgs.scrcpy
           nix-on-droid.packages.x86_64-linux.nix-on-droid
