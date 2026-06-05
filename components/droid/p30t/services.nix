@@ -79,7 +79,7 @@
           ''
             if ! ${pgrep} -x "runsvdir" > /dev/null; then
               echo "Starting runsvdir for services..."
-              ${runsvdir} -P "${serviceDirectory}" &
+              tmux new-session -d -A -n daemons ${runsvdir} -P "${serviceDirectory}"
             fi
           ''
 
