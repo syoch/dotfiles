@@ -34,10 +34,6 @@
 
   environment.etcBackupExtension = ".bak";
 
-  build.extraProotOptions = [
-    "--bind=/system/bin/su:/system/bin/su"
-  ];
-
   nix.package = pkgs.nix;
   nix.extraOptions = ''
     experimental-features = nix-command flakes

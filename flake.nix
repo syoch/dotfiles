@@ -88,6 +88,11 @@
         pkgs = import nixpkgs-2511 { system = "aarch64-linux"; };
         modules = [
           ./components/droid/p30t
+          {
+            environment.packages = [
+              syoch-infra.packages.aarch64-linux.portal
+            ];
+          }
         ];
 
         home-manager-path = home-manager-2511.outPath;
