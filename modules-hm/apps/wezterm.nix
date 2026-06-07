@@ -17,7 +17,7 @@ in
 
     programs.wezterm = {
       enable = true;
-      package = (config.lib.nixGL.wrap pkgs.wezterm);
+      package = pkgs.wezterm;
     };
 
     home.file.".config/wezterm".source =
