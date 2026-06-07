@@ -38,6 +38,7 @@
 
   networking.hostName = "syoch-nix";
   networking.networkmanager.enable = true;
+  boot.binfmt.emulatedSystems = [ "aarch64-linux" ];
 
   nix.settings.extra-sandbox-paths = [
     "/nix/var/cache/ccache"

@@ -3,3 +3,4 @@ config.xml
 *.qcow2
 result
 .antigravitycli
+dotfiles.tgz
