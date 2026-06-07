@@ -98,8 +98,12 @@ for i = 1, 10 do
   hl.bind(mainMod .. " + " .. key, hl.dsp.focus({ workspace = i }))
   hl.bind(mainMod .. " + SHIFT + " .. key, hl.dsp.window.move({ workspace = i }))
 end
+
+-- special workspace
+hl.workspace_rule({ workspace = "special:sp1", on_created_empty = "wezterm", gaps_out = 15 })
 hl.bind(mainMod .. " + SHIFT + A", hl.dsp.workspace.toggle_special("sp1"))
 hl.bind(mainMod .. " + SHIFT + Q", hl.dsp.window.move({ workspace = "special:sp1" }))
+hl.workspace_rule({ workspace = "special:sp2", on_created_empty = "wezterm", gaps_out = 15 })
 hl.bind(mainMod .. " + SHIFT + S", hl.dsp.workspace.toggle_special("sp2"))
 hl.bind(mainMod .. " + SHIFT + W", hl.dsp.window.move({ workspace = "special:sp2" }))
 
@@ -139,7 +143,3 @@ hl.window_rule({
   match          = { title = ".*" },
   suppress_event = "maximize",
 })
-
--- workspace rules
-hl.workspace_rule({ workspace = "special:sp1", on_created_empty = "wezterm", gaps_out = 15 })
-hl.workspace_rule({ workspace = "special:sp2", on_created_empty = "wezterm", gaps_out = 15 })
