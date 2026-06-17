@@ -40,6 +40,8 @@
 
   inputs.syoch-infra.url = "github:syoch/infrastructure";
 
+  inputs.vscode-server.url = "github:nix-community/nixos-vscode-server";
+
   outputs =
     {
       nixpkgs,
@@ -53,6 +55,7 @@
       nix-on-droid,
       pyproject-nix,
       syoch-infra,
+      vscode-server,
       ...
     }@inputs:
     let
@@ -64,7 +67,7 @@
         ags.homeManagerModules.default
       ];
       nixosSystem =
-        folder:
+        folder: extraModules:
         nixpkgs.lib.nixosSystem {
           specialArgs = {
             inherit inputs;
@@ -77,12 +80,23 @@
             ./components/host/${folder}
             sops-nix.nixosModules.sops
             syoch-infra.nixosModules.syoch-portal
-          ];
+          ]
+          ++ extraModules;
         };
     in
     {
-      nixosConfigurations.sv01 = nixosSystem "sv01";
-      nixosConfigurations.syoch-nix = nixosSystem "syoch-nix";
+      nixosConfigurations.sv01 = nixosSystem "sv01" [
+
+      ];
+      nixosConfigurations.syoch-nix = nixosSystem "syoch-nix" [
+        vscode-server.nixosModules.default
+        (
+          { config, pkgs, ... }:
+          {
+            services.vscode-server.enable = true;
+          }
+        )
+      ];
 
       nixOnDroidConfigurations.default = nix-on-droid.lib.nixOnDroidConfiguration {
         pkgs = import nixpkgs-2511 { system = "aarch64-linux"; };

@@ -100,7 +100,17 @@
 
   services.nextcloud-whiteboard-server = {
     enable = true;
-    settings.NEXTCLOUD_URL = "https://whiteboard.syoch.org";
+    settings.NEXTCLOUD_URL = "https://nextcloud.syoch.org";
     secrets = [ config.sops.secrets."nextcloud-whiteboard".path ];
+  };
+  services.nginx.virtualHosts."wb-nextcloud.syoch.org" = {
+    listenAddresses = [
+      "0.0.0.0"
+      "[::0]"
+    ];
+    locations."/" = {
+      proxyPass = "http://127.0.0.1:3002";
+      proxyWebsockets = true;
+    };
   };
 }

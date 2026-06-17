@@ -6,9 +6,12 @@
   imports = [
     ./hardware-configuration.nix
     ./secrets.nix
-    ./vpn.nix
     ./cloudflared.nix
-    ./nextcloud.nix
+    ./services/collabora.nix
+    ./services/nextcloud.nix
+    ./services/pgsql.nix
+    ./services/portal.nix
+    ./services/xwiki.nix
   ];
 
   # Config
@@ -76,131 +79,32 @@
 
   services.syncthing.enable = true;
 
-  services.collabora-online = {
-    enable = true;
-    settings.storage.wopi = {
-      "@allow" = true;
-      host = [
-        "collabora.syoch.org"
-      ];
-    };
-  };
-
   virtualisation.podman.enable = true;
-  systemd.tmpfiles.rules = [
-    "d /srv/xwiki 0700 999 999 - -"
-    "d /srv/syoch-portal 0700 syoch-portal syoch-portal - -"
-  ];
-  services.postgresql = {
-    ensureDatabases = [
-      "xwiki"
-      "syoch-portal"
-    ];
-    ensureUsers = [
-      {
-        name = "xwiki";
-        ensureDBOwnership = true;
-      }
-      {
-        name = "syoch-portal";
-        ensureDBOwnership = true;
-      }
-    ];
-    enableTCPIP = true;
-    authentication = ''
-      host xwiki xwiki 10.88.0.1/16 scram-sha-256
-      host syoch-portal syoch-portal 127.0.0.1/32 scram-sha-256
-      host postgres postgres 10.42.0.0/16 scram-sha-256
-    '';
-  };
   networking.firewall.interfaces."podman0".allowedTCPPorts = [ 5432 ];
   virtualisation.oci-containers.backend = "podman";
-  sops.secrets."portal-db-password" = {
-    owner = "postgres";
-    path = "/etc/nixos/portal-db-password";
-  };
-  sops.secrets."xwiki-db-password" = {
-    owner = "postgres";
-    path = "/etc/nixos/xwiki-db-password";
-  };
-  systemd.services.postgresql-setup-passwords = {
-    description = "Set PostgreSQL passwords from SOPS secrets";
-    path = [ pkgs.postgresql ];
 
-    requires = [ "postgresql.service" ];
-    after = [ "postgresql.service" ];
-    wantedBy = [ "multi-user.target" ];
-    before = [ "syoch-portal.service" ];
-
-    serviceConfig = {
-      User = "postgres";
-      Group = "postgres";
-      Type = "oneshot";
-      RemainAfterExit = true;
-    };
-
-    script = ''
-      set -e
-      xwiki_password="$(cat ${config.sops.secrets."xwiki-db-password".path})"
-      portal_password="$(cat ${config.sops.secrets."portal-db-password".path})"
-      psql -v ON_ERROR_STOP=1 -c "ALTER USER \"xwiki\" WITH PASSWORD '$xwiki_password';"
-      psql -v ON_ERROR_STOP=1 -c "ALTER USER \"syoch-portal\" WITH PASSWORD '$portal_password';"
-    '';
-  };
-  sops.secrets."xwiki-env" = {
-    owner = "root";
-    path = "/etc/nixos/xwiki-env";
-  };
-  virtualisation.oci-containers.containers.xwiki = {
-    image = "docker.io/library/xwiki:lts-postgres-tomcat";
-    ports = [ "8080:8080" ];
-
-    environmentFiles = [
-      config.sops.secrets."xwiki-env".path
-    ];
-
-    volumes = [
-      "/srv/xwiki:/usr/local/xwiki"
-    ];
-  };
-
-  sops.secrets."portal-config" = {
-    owner = "syoch-portal";
-    path = "/etc/nixos/portal-config";
-  };
-
-  services.syoch-portal = {
-    enable = true;
-    configFile = config.sops.secrets."portal-config".path;
-
-    user = "syoch-portal";
-    group = "syoch-portal";
-  };
-  systemd.services.syoch-portal = {
-    requires = [ "postgresql-setup-passwords.service" ];
-    after = [ "postgresql-setup-passwords.service" ];
-  };
   services.nginx.clientMaxBodySize = "1G";
   services.nginx.recommendedProxySettings = true;
   services.nginx.recommendedTlsSettings = true;
-  services.nginx.virtualHosts."portal.syoch.org" = {
-    listenAddresses = [
-      "127.0.0.1"
-      "100.96.100.1"
-    ];
-    extraConfig = ''
-      add_header Strict-Transport-Security "max-age=31536000; includeSubDomains" always;
-      add_header X-Frame-Options "DENY" always;
-      add_header X-Content-Type-Options "nosniff" always;
-      add_header Referrer-Policy "no-referrer" always;
-      add_header Permissions-Policy "interest-cohort=()" always;
-      add_header Content-Security-Policy "default-src 'self'; img-src 'self' data:; style-src 'self' 'unsafe-inline'; script-src 'self'" always;
-    '';
-    locations."/" = {
-      proxyPass = "http://127.0.0.1:8000";
-      proxyWebsockets = true;
-    };
-  };
+  services.nginx.appendHttpConfig = ''
+    log_format main escape=json '{'
+        '"time":"$time_iso8601",'                    # 日時（ISO8601形式）
+        '"client_ip":"$remote_addr",'                # クライアントIP
+        '"forwarded_for":"$http_x_forwarded_for",'    # X-Forwarded-Forヘッダ
+        '"host":"$http_host",'                       # Hostヘッダ
+        '"method":"$request_method",'                # HTTPメソッド（GET/POSTなど）
+        '"uri":"$request_uri",'                      # リクエストURI
+        '"status":$status,'                          # ステータスコード
+        '"body_bytes":$body_bytes_sent,'             # 送信バイト数
+        '"referer":"$http_referer",'                 # Refererヘッダ
+        '"user_agent":"$http_user_agent",'           # User-Agentヘッダ
+        '"request_time":$request_time,'              # NGINX全体の処理時間
+        '"upstream_time":"$upstream_response_time",'  # アプリ側の処理時間
+        '"request_id":"$request_id"'                 # リクエスト一意ID
+    '}';
+    access_log /var/log/nginx/access.log main;
+
+  '';
 
   environment.systemPackages = with pkgs; [
     neovim

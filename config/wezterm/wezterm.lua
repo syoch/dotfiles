@@ -19,8 +19,9 @@ config.font_size = 8
 
 config.mux_enable_ssh_agent = false
 
-config.enable_wayland = false
+config.enable_wayland = true
 config.use_ime = true
+
 config.window_background_opacity = 0.7
 config.color_scheme = 'OneDark (base16)'
 config.window_frame = {
@@ -28,17 +29,13 @@ config.window_frame = {
   active_titlebar_bg = "none",
 }
 
-config.window_decorations = "RESIZE"
+config.window_decorations = "NONE"
 config.inactive_pane_hsb = {
   saturation = 0.9,
   brightness = 0.8,
 }
 config.show_new_tab_button_in_tab_bar = false
-config.colors = {
-  tab_bar = {
-    inactive_tab_edge = "none",
-  },
-}
+config.enable_tab_bar = true
 config.default_cursor_style = 'BlinkingBar'
 
 

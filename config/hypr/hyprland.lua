@@ -1,20 +1,23 @@
 hl.monitor({
   output = "desc:AU Optronics 0xB78F",
-  mode = "1920x1080@60.16",
-  position = "4373x0",
+  mode = "1920x1080@60",
+  position = "3840x0",
   scale = 1.0,
+  reserved_area = 0
 });
 hl.monitor({
   output = "desc:BOE Display demoset-1",
-  mode = "1920x1080@60.0",
-  position = "533x0",
+  mode = "1920x1080@60",
+  position = "1920x1080",
   scale = 1.0,
+  reserved_area = 0
 });
 hl.monitor({
   output = "desc:Acer Technologies SB240Y 0x1040716F",
-  mode = "1920x1080@74.97",
-  position = "2453x0",
+  mode = "1920x1080@75",
+  position = "1920x0",
   scale = 1.0,
+  reserved_area = 0
 });
 
 hl.env("MOZ_ENABLE_WAYLAND", "1")
@@ -52,7 +55,8 @@ hl.config({
       size = 6,
       passes = 1,
       brightness = 0.4,
-      ignore_opacity = true
+      ignore_opacity = true,
+      new_optimizations = true,
     }
   },
   input = {

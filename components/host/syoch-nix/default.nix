@@ -52,6 +52,8 @@
 
   programs.nix-ld.enable = true;
   programs.nix-ld.libraries = with pkgs; [
+    stdenv.cc.cc
+    openssl
     openssl_1_1
     gobject-introspection
     nss
@@ -104,6 +106,17 @@
 
   programs.steam = {
     enable = true;
+  };
+
+  networking.hosts = {
+    "10.50.10.1" = [
+      "sv01.nnctrobo.internal"
+      "id.nnctrobo.internal"
+      "nextcloud.nnctrobo.internal"
+      "nextcloud-wb.nnctrobo.internal"
+      "smb.nnctrobo.internal"
+      "luminary.nnctrobo.internal"
+    ];
   };
 
   environment.systemPackages = with pkgs; [
