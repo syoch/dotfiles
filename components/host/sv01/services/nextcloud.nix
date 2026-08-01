@@ -23,7 +23,7 @@
 
   services.nextcloud = {
     enable = true;
-    package = pkgs.nextcloud33;
+    package = pkgs.nextcloud34;
     hostName = "nextcloud.syoch.org";
     database.createLocally = true;
     config.dbtype = "pgsql";

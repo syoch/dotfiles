@@ -9,6 +9,7 @@
     ./de.nix
     ./wifi.nix
     ./vm-lab.nix
+    ./cloudflared.nix
   ];
 
   nixpkgs.config.allowUnfree = true;
@@ -90,6 +91,42 @@
     openInternalFirewall = true;
   };
 
+  services.blocky = {
+    enable = true;
+    settings = {
+      ports.dns = 54; # Port for incoming DNS Queries.
+      upstreams.groups.default = [
+        "https://one.one.one.one/dns-query" # Using Cloudflare's DNS over HTTPS server for resolving queries.
+      ];
+      # For initially solving DoH/DoT Requests when no system Resolver is available.
+      bootstrapDns = {
+        upstream = "https://one.one.one.one/dns-query";
+        ips = [
+          "1.1.1.1"
+          "1.0.0.1"
+        ];
+      };
+      #Enable Blocking of certain domains.
+      blocking = {
+        denylists = {
+          #Adblocking
+          ads = [ "https://raw.githubusercontent.com/StevenBlack/hosts/master/hosts" ];
+          #Another filter for blocking adult sites
+          adult = [ "https://blocklistproject.github.io/Lists/porn.txt" ];
+          #You can add additional categories
+        };
+        #Configure what block categories are used
+        clientGroupsBlock = {
+          default = [ "ads" ];
+          kids-ipad = [
+            "ads"
+            "adult"
+          ];
+        };
+      };
+    };
+  };
+
   services.dnsmasq = {
     enable = true;
     settings.bind-interfaces = true;
@@ -98,8 +135,7 @@
     servers = [
       "/nnctrobo.internal/127.0.0.53#5053"
       "/syoch.internal/10.42.0.1"
-      "1.1.1.1"
-      "1.0.0.1"
+      "127.0.0.1#54"
     ];
   };
   networking.nameservers = [ "127.0.0.50" ];
@@ -141,5 +177,6 @@
     keepassxc
     cifs-utils
     wshowkeys
+    tetrio-desktop
   ];
 }
