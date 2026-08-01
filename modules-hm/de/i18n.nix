@@ -20,6 +20,7 @@ in
         fcitx5-nord
         fcitx5-mozc
         fcitx5-gtk
+        qt6Packages.fcitx5-chinese-addons
       ];
     };
   };
