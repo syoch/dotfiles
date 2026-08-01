@@ -56,5 +56,6 @@
   hm-module.opencode.enable = true;
   hm-module.opencode.tasks.enable = true;
   hm-module.opencode.auto-skill.enable = true;
+  hm-module.opencode.auto-notes.enable = true;
   programs.zsh.shellAliases."opencode" = "OPENCODE_ENABLE_EXA=1 opencode";
 }

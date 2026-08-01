@@ -9,6 +9,7 @@ let
   cfg = config.hm-module.opencode;
   tasksTs = ./opencode/tasks.ts;
   autoSkillTs = ./opencode/auto-skill.ts;
+  autoNotesTs = ./opencode/auto-notes.ts;
 in
 {
   options.hm-module.opencode = {
@@ -26,6 +27,16 @@ in
         (global) or .opencode/skills/auto/ (project) based on its judgement.
       '';
     };
+
+    auto-notes = {
+      enable = mkEnableOption ''
+        auto-notes plugin: on session.idle, asks an LLM subagent to review
+        the recent user messages for durable project information (decisions,
+        setup, conventions, open questions, workflow notes, user preferences)
+        and appends dated bullets to .opencode/PROJECT_NOTES.md in the
+        project root.
+      '';
+    };
   };
 
   config = mkIf cfg.enable {
@@ -36,12 +47,19 @@ in
           webfetch = "allow";
           websearch = "allow";
         };
-      } // lib.optionalAttrs cfg.auto-skill.enable {
-        # Mem0 plugin is registered explicitly. auto-skill.ts is auto-discovered
-        # by opencode from ~/.config/opencode/plugins/ and does not need to be
-        # listed here.
+      }
+      // lib.optionalAttrs (cfg.auto-skill.enable || cfg.auto-notes.enable) {
+        # Mem0 plugin is registered explicitly. auto-skill.ts and auto-notes.ts
+        # are auto-discovered by opencode from ~/.config/opencode/plugins/ and
+        # do not need to be listed here.
         plugin = [ "@mem0/opencode-plugin" ];
       };
+    };
+
+    systemd.user.services.opencode = {
+      Unit.Description = "OpenCode WebUI";
+      Service.ExecStart = "${pkgs.opencode}/bin/opencode web --hostname 127.0.0.1 --port 12000";
+      Install.WantedBy = [ "default.target" ];
     };
 
     # Install the custom tool/plugin as real files (not Nix-store symlinks) so
@@ -49,15 +67,20 @@ in
     # to find @opencode-ai/plugin and mem0ai.
     home.activation.opencodeTools = mkIf cfg.tasks.enable (
       lib.hm.dag.entryAfter [ "writeBoundary" ] ''
-                mkdir -p "$HOME/.config/opencode/tools"
-                install -m 0644 ${tasksTs} "$HOME/.config/opencode/tools/tasks.ts"
+        mkdir -p "$HOME/.config/opencode/tools"
+        install -m 0644 ${tasksTs} "$HOME/.config/opencode/tools/tasks.ts"
       ''
     );
 
-    home.activation.opencodeAutoSkill = mkIf cfg.auto-skill.enable (
+    home.activation.opencodePlugins = mkIf (cfg.auto-skill.enable || cfg.auto-notes.enable) (
       lib.hm.dag.entryAfter [ "writeBoundary" ] ''
                 mkdir -p "$HOME/.config/opencode/plugins" "$HOME/.config/opencode/skills/auto"
-                install -m 0644 ${autoSkillTs} "$HOME/.config/opencode/plugins/auto-skill.ts"
+                ${lib.optionalString cfg.auto-skill.enable ''
+                  install -m 0644 ${autoSkillTs} "$HOME/.config/opencode/plugins/auto-skill.ts"
+                ''}
+                ${lib.optionalString cfg.auto-notes.enable ''
+                  install -m 0644 ${autoNotesTs} "$HOME/.config/opencode/plugins/auto-notes.ts"
+                ''}
 
                 # Ensure package.json has both @opencode-ai/plugin and mem0ai.
                 if [ ! -f "$HOME/.config/opencode/package.json" ]; then
