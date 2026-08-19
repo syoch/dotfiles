@@ -28,7 +28,6 @@
   hm-module.wezterm.enable = true;
   hm-module.firefox.enable = true;
   hm-module.obs-studio.enable = true;
-  hm-module.winapps.enable = true;
   hm-module.syncthing.enable = true;
   hm-module.prismlauncher.enable = true;
   programs.joplin-desktop.enable = true;

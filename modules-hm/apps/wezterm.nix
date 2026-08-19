@@ -13,8 +13,6 @@ in
   };
 
   config = lib.mkIf cfg.enable {
-    hm-module.nixgl.enable = true;
-
     programs.wezterm = {
       enable = true;
       package = pkgs.wezterm;

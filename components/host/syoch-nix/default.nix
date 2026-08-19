@@ -178,5 +178,6 @@
     cifs-utils
     wshowkeys
     tetrio-desktop
+    techmino
   ];
 }

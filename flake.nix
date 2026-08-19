@@ -15,11 +15,6 @@
     };
     astal.url = "github:aylur/astal";
     ags.url = "github:aylur/ags";
-    winapps.url = "github:winapps-org/winapps";
-    nixgl = {
-      url = "github:nix-community/nixGL";
-      inputs.nixpkgs.follows = "nixpkgs";
-    };
 
     nixos-generators.url = "github:nix-community/nixos-generators";
     nixos-generators.inputs.nixpkgs.follows = "nixpkgs";
@@ -28,10 +23,6 @@
       url = "github:nix-community/nix-on-droid/release-24.05";
       inputs.nixpkgs.follows = "nixpkgs-2511";
       inputs.home-manager.follows = "home-manager-2511";
-    };
-    pyproject-nix = {
-      url = "github:nix-community/pyproject.nix";
-      inputs.nixpkgs.follows = "nixpkgs";
     };
   };
 
@@ -49,11 +40,9 @@
       home-manager,
       home-manager-2511,
       sops-nix,
-      nixgl,
       ags,
       nixos-generators,
       nix-on-droid,
-      pyproject-nix,
       syoch-infra,
       vscode-server,
       ...
@@ -71,7 +60,6 @@
         nixpkgs.lib.nixosSystem {
           specialArgs = {
             inherit inputs;
-            inherit nixgl;
             components = ./components;
           };
           system = "x86_64-linux";
@@ -129,7 +117,6 @@
         pkgs = nixpkgs.legacyPackages.x86_64-linux;
         extraSpecialArgs = {
           inherit inputs;
-          inherit nixgl;
         };
         modules = homeManagerModules ++ [ ./components/home/syoch ];
       };
@@ -142,7 +129,7 @@
           pkgs.nix-du
           pkgs.ncdu
           pkgs.unzip
-          pkgs.wireshark-qt
+          pkgs.wireshark
           pkgs.bun
           pkgs.android-tools
           pkgs.scrcpy
