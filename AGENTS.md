@@ -1,5 +1,11 @@
 # AGENTS.md - syoch/dotfiles
 
+## 作業規範 (Agent Architecture)
+
+- `agent-arch.md` — AIエージェントの作業環境アーキテクチャと行動規範の定義 (§1-4)。本リポジトリの作業はこれに準拠する。
+- グローバル行動規範 (`~/.config/opencode/AGENTS.md`) は `modules-hm/apps/opencode/AGENTS.global.md` から管理される。
+- ユーザースコープのスキルカタログは `~/.agents/`（本リポジトリ `config/agents/` へのシンボリックリンク）、プロジェクトスコープは `./.agents/` に配置する。
+
 ## What this repo is
 
 Nix flake-based system configuration for multiple machines: desktop (syoch-nix), home server (sv01), rescue ISO, and Nix-on-Droid phone. Consumed by `syoch/infrastructure` as a flake input (`syoch-infra`).

@@ -1,82 +1,98 @@
-# opencode - Hermes-style memory + auto-skill
+# opencode - managed harness: agents-bridge + global rules + catalog
 
-This Home Manager module configures OpenCode with two layers inspired by Nous
-Research's Hermes Agent: persistent cross-session memory and automatic
-SKILL.md generation.
+This Home Manager module configures OpenCode with a deliberately small,
+repo-managed harness. Skill creation is **knowledge-driven** (the global
+AGENTS.md instructs the agent to skillify knowledge as it is gained), not
+auto-generated from tool-call patterns.
 
 ## What's enabled
 
 | Feature | Source | Behavior |
 |---|---|---|
-| Cross-session memory | `@mem0/opencode-plugin` (npm) | 9 native memory tools + lifecycle hooks. Auto-injects relevant memories on session start, per-prompt, and through compaction. |
-| Auto-Skill generation | `auto-skill.ts` (local plugin) | Watches tool calls; on `session.idle` it asks an LLM subagent to write a `SKILL.md` for any detected pattern. |
+| Agents-bridge | `agents-bridge.ts` (local plugin) | Reads the `.agents` catalog manifests and injects a compact `[agents-bridge]` block into the system prompt on every session start. |
+| Global agent rules | `AGENTS.global.md` -> `~/.config/opencode/AGENTS.md` | Behavioral rules: native-first processing, lossless collection, /tmp workspace protection, `.agents` catalog management, and the knowledge-driven skillification flow (§4). |
+| User-scope catalog | `config/agents/` -> `~/.agents` | Tech-stack-categorized reusable assets (`<category>/<skill>/SKILL.md`), symlinked into the home dir. Catalog is derived dynamically from the SKILL.md tree (no MANIFEST). |
+| Agents tools | `agents.ts` (tools) | `agents_categories` / `agents_list` / `agents_add` / `agents_update` / `agents_rename` / `agents_remove` / `agents_show` — manage the `.agents` catalogs by scanning the directory tree and SKILL.md frontmatter. |
+| Task tool | `tasks.ts` (tools) | tmux-backed background tasks. |
 
-## Auto-skill plugin
+auto-skill / auto-notes were **removed**: repetition-based auto-generation
+produced noisy, unmanaged SKILL.md files (see
+`opencode-harness-review-20260819.md`). Knowledge is now captured by the
+agent itself per the global AGENTS.md §4 flow.
 
-### Triggers (per session, in-memory only)
+## Agents-bridge plugin
 
-- **Repetition**: a tool call with the same normalized args executed 3+ times
-  successfully
-- **Error recovery**: a (failed -> succeeded) tool pair observed 2+ times
-- Both thresholds are hard-coded in `auto-skill.ts` (`REPETITION_THRESHOLD`,
-  `ERROR_RECOVERY_THRESHOLD`).
+On session start, `experimental.chat.system.transform` dynamically scans the
+SKILL.md trees and reads each file's frontmatter (`name`/`description`/`args`):
 
-When a session ends (`session.idle`), the plugin collects the trigger
-evidence, sends it to a one-shot LLM subagent (via `client.session.create` +
-`session.prompt`), and asks for one of:
+- **User scope** `~/.agents/<category>/<name>/SKILL.md`
+- **Project scope** `<cwd>/.agents/<name>/SKILL.md`
 
+It renders a compact list (`category/name (args): desc`), so the agent knows
+which reusable assets exist and where to read the full details (the co-located
+`SKILL.md`). No MANIFEST.md is maintained — the directory tree + frontmatter
+is the single source of truth.
+
+## Agents tools
+
+`agents_*` tools manage the catalogs by operating on the SKILL.md tree
+(never editing a MANIFEST):
+
+- `agents_categories` — list valid categories (`project` = project root, plus
+  existing user-scope categories)
+- `agents_list` — list entries (optionally filtered by category)
+- `agents_add` — create a skill (`SKILL.md` with generated frontmatter);
+  rejects unknown categories; `force=true` overwrites
+- `agents_update` — replace description/args/body
+- `agents_rename` — rename/move a skill to another category (incl. `project`)
+- `agents_remove` — delete a skill (requires `force=true`)
+- `agents_show` — read a skill's full content
+
+New categories are **not** auto-created by the tools (unknown categories are
+rejected); create them with the Shell tool when the user requests it.
+
+## Global agent rules
+
+`~/.config/opencode/AGENTS.md` is a symlink to
+`modules-hm/apps/opencode/AGENTS.global.md`. Key sections:
+
+- Command/data processing principles (native-first, lossless collection,
+  no inline scripts)
+- Workspace protection (intermediate files under `/tmp`)
+- `.agents` catalog layout (SKILL.md tree + frontmatter as the source of truth)
+- Knowledge-driven skillification: when knowledge is gained (non-obvious
+  procedure, pitfalls, recovery steps, repetition), skillify it immediately
+  into `<scope>/.agents/<category>/<name>/SKILL.md` via the `agents_*` tools,
+  then verify it is reproducible.
+
+## Activation
+
+All managed sources (plugins, tools, AGENTS.md) are out-of-store symlinks
+into `~/dotfiles/modules-hm/apps/opencode/`, so edits are live without a
+rebuild. Activations:
+
+- `opencodePlugins` — symlinks `agents-bridge.ts`, ensures `package.json` and
+  `node_modules` (@opencode-ai/plugin) exist under `~/.config/opencode`
+- `opencodeTools` — symlinks `tasks.ts`
+- `opencodeAgentsTool` — symlinks `agents.ts`
+- `opencodeGlobalAgents` — symlinks `AGENTS.md`
+- `opencodeAgentsLink` — symlinks `~/.agents -> ~/dotfiles/config/agents`
+- `opencodeNodeModules` — symlinks the config-dir node_modules into the repo
+  source dir so runtime imports of symlinked sources keep resolving
+
+## Disable
+
+Set per-feature in your component config:
+
+```nix
+hm-module.opencode.agents-bridge.enable = false;
 ```
-{
-  "worth": boolean,
-  "name": "short-hyphen-name",
-  "description": "Use when ...",
-  "scope": "global" | "project",
-  "body": "markdown body of the skill (200-500 words)",
-  "reject_reason": "..."
-}
-```
-
-### Output paths
-
-- `scope = "global"` -> `~/.config/opencode/skills/auto/auto-<name>-<ts>/SKILL.md`
-- `scope = "project"` -> `<cwd>/.opencode/skills/auto/auto-<name>-<ts>/SKILL.md`
-
-The agent itself decides global vs project. Project-isolated patterns tend
-to land in the project tree; reusable procedures land globally.
-
-### Nudge on next session
-
-The plugin writes each successfully generated skill to
-`~/.config/opencode/auto-skill-nudge.json` and injects a 1-line
-`[auto-skill] ...` block via `experimental.chat.system.transform` on the next
-session start, so the agent knows which auto-skills are recent and where
-to read them.
 
 ## Files
 
 - `modules-hm/apps/opencode.nix` - the module
-- `modules-hm/apps/opencode/tasks.ts` - existing tmux-backed task tool
-- `modules-hm/apps/opencode/auto-skill.ts` - the new plugin
-- `components/home/syoch/default.nix` - enables both `tasks` and `auto-skill`
-
-## Activation
-
-`home.activation.opencodeAutoSkill` runs after `writeBoundary` and:
-
-1. Creates `~/.config/opencode/plugins/` and `~/.config/opencode/skills/auto/`
-2. Copies `auto-skill.ts` from the Nix store into `plugins/`
-3. Ensures `package.json` declares both `@opencode-ai/plugin` and `mem0ai`
-4. Runs `bun install --no-save` if either is missing
-
-`home.activation.opencodeTools` (the existing tasks hook) runs in parallel.
-
-## Disable
-
-Set in your component config:
-
-```nix
-hm-module.opencode.auto-skill.enable = false;
-```
-
-The plugin is not auto-loaded, no SKILL.md gets written, and no nudge
-appears in subsequent sessions.
+- `modules-hm/apps/opencode/tasks.ts` - tmux-backed task tool
+- `modules-hm/apps/opencode/agents-bridge.ts` - the catalog bridge plugin
+- `modules-hm/apps/opencode/AGENTS.global.md` - global behavioral rules
+- `config/agents/**` - user-scope catalog (~/.agents)
+- `components/home/syoch/default.nix` - enables the harness

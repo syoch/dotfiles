@@ -7,9 +7,6 @@
 with lib;
 let
   cfg = config.hm-module.opencode;
-  tasksTs = ./opencode/tasks.ts;
-  autoSkillTs = ./opencode/auto-skill.ts;
-  autoNotesTs = ./opencode/auto-notes.ts;
 in
 {
   options.hm-module.opencode = {
@@ -19,22 +16,39 @@ in
       enable = mkEnableOption "opencode tasks tool (tmux-backed background tasks)";
     };
 
-    auto-skill = {
+    agents-tool = {
       enable = mkEnableOption ''
-        auto-skill plugin: watches tool calls, detects repetition (>=3x) and
-        error-recovery (>=2x) patterns, and on session.idle asks an LLM
-        subagent to write a SKILL.md to ~/.config/opencode/skills/auto/
-        (global) or .opencode/skills/auto/ (project) based on its judgement.
+        agents tools: manage the .agents catalogs (list/categories/add/
+        update/rename/remove/show) by dynamically scanning the directory tree
+        and SKILL.md frontmatter instead of editing MANIFEST.md.
       '';
     };
 
-    auto-notes = {
+    agents-bridge = {
       enable = mkEnableOption ''
-        auto-notes plugin: on session.idle, asks an LLM subagent to review
-        the recent user messages for durable project information (decisions,
-        setup, conventions, open questions, workflow notes, user preferences)
-        and appends dated bullets to .opencode/PROJECT_NOTES.md in the
-        project root.
+        agents-bridge plugin: reads the .agents catalog manifests
+        (./.agents/MANIFEST.md and ~/.agents/**/MANIFEST.md) and injects a
+        [agents-bridge] block into the system prompt via
+        experimental.chat.system.transform, so the agent knows which reusable
+        scripts/skills are available without searching the directory tree.
+      '';
+    };
+
+    global-agents = {
+      enable = mkEnableOption ''
+        manage ~/.config/opencode/AGENTS.md (global agent instructions:
+        native-first processing, lossless collection, /tmp workspace
+        protection, .agents catalog and knowledge-driven skill promotion
+        flow). Source: opencode/AGENTS.global.md.
+      '';
+    };
+
+    agents-catalog = {
+      enable = mkEnableOption ''
+        symlink ~/.agents to the user-scope agent catalog managed in this
+        repo (config/agents). Catalog layout: MANIFEST.md + tech-stack
+        subdirectories, each containing MANIFEST.md and per-skill SKILL.md
+        directories.
       '';
     };
   };
@@ -46,13 +60,11 @@ in
         permission = {
           webfetch = "allow";
           websearch = "allow";
+        }
+        // lib.optionalAttrs cfg.agents-tool.enable {
+          # catalog management custom tools (agents_*) run without per-use prompts
+          "agents_*" = "allow";
         };
-      }
-      // lib.optionalAttrs (cfg.auto-skill.enable || cfg.auto-notes.enable) {
-        # Mem0 plugin is registered explicitly. auto-skill.ts and auto-notes.ts
-        # are auto-discovered by opencode from ~/.config/opencode/plugins/ and
-        # do not need to be listed here.
-        plugin = [ "@mem0/opencode-plugin" ];
       };
     };
 
@@ -62,50 +74,80 @@ in
       Install.WantedBy = [ "default.target" ];
     };
 
-    # Install the custom tool/plugin as real files (not Nix-store symlinks) so
-    # Node module resolution can walk up to `~/.config/opencode/node_modules/`
-    # to find @opencode-ai/plugin and mem0ai.
+    # Manage plugin/tool sources as out-of-store symlinks into this repo,
+    # so edits are reflected immediately without a rebuild. Runtime imports
+    # (@opencode-ai/plugin, bun) resolve via ~/.config/opencode/node_modules
+    # as before (verified with a sandboxed opencode session).
     home.activation.opencodeTools = mkIf cfg.tasks.enable (
       lib.hm.dag.entryAfter [ "writeBoundary" ] ''
         mkdir -p "$HOME/.config/opencode/tools"
-        install -m 0644 ${tasksTs} "$HOME/.config/opencode/tools/tasks.ts"
+        ln -sfn "${config.home.homeDirectory}/dotfiles/modules-hm/apps/opencode/tasks.ts" "$HOME/.config/opencode/tools/tasks.ts"
       ''
     );
 
-    home.activation.opencodePlugins = mkIf (cfg.auto-skill.enable || cfg.auto-notes.enable) (
+    # Manage the .agents catalog tools from the repo.
+    home.activation.opencodeAgentsTool = mkIf cfg.agents-tool.enable (
       lib.hm.dag.entryAfter [ "writeBoundary" ] ''
-                mkdir -p "$HOME/.config/opencode/plugins" "$HOME/.config/opencode/skills/auto"
-                ${lib.optionalString cfg.auto-skill.enable ''
-                  install -m 0644 ${autoSkillTs} "$HOME/.config/opencode/plugins/auto-skill.ts"
-                ''}
-                ${lib.optionalString cfg.auto-notes.enable ''
-                  install -m 0644 ${autoNotesTs} "$HOME/.config/opencode/plugins/auto-notes.ts"
-                ''}
+        mkdir -p "$HOME/.config/opencode/tools"
+        ln -sfn "${config.home.homeDirectory}/dotfiles/modules-hm/apps/opencode/agents.ts" "$HOME/.config/opencode/tools/agents.ts"
+      ''
+    );
 
-                # Ensure package.json has both @opencode-ai/plugin and mem0ai.
+    # Manage the global AGENTS.md (behavioral rules) from the repo.
+    home.activation.opencodeGlobalAgents = mkIf cfg.global-agents.enable (
+      lib.hm.dag.entryAfter [ "writeBoundary" ] ''
+        mkdir -p "$HOME/.config/opencode"
+        ln -sfn "${config.home.homeDirectory}/dotfiles/modules-hm/apps/opencode/AGENTS.global.md" "$HOME/.config/opencode/AGENTS.md"
+      ''
+    );
+
+    # opencode resolves imports of symlinked plugin/tool sources from their
+    # realpath (this repo) — expose the config-dir node_modules there so
+    # runtime imports like '@opencode-ai/plugin' keep resolving.
+    home.activation.opencodeNodeModules = mkIf (cfg.tasks.enable || cfg.agents-bridge.enable) (
+      lib.hm.dag.entryAfter [ "writeBoundary" ] ''
+        ln -sfn "$HOME/.config/opencode/node_modules" "${config.home.homeDirectory}/dotfiles/modules-hm/apps/opencode/node_modules"
+      ''
+    );
+
+    # Manage the user-scope agent catalog ~/.agents from this repo.
+    # A real out-of-store symlink (activation, not home.file) so edits in
+    # ~/dotfiles/config/agents are reflected immediately without a rebuild.
+    home.activation.opencodeAgentsLink = mkIf cfg.agents-catalog.enable (
+      lib.hm.dag.entryAfter [ "writeBoundary" ] ''
+        ln -sfn "${config.home.homeDirectory}/dotfiles/config/agents" "$HOME/.agents"
+      ''
+    );
+
+    home.activation.opencodePlugins = mkIf cfg.agents-bridge.enable (
+      lib.hm.dag.entryAfter [ "writeBoundary" ] ''
+                mkdir -p "$HOME/.config/opencode/plugins"
+                ln -sfn "${config.home.homeDirectory}/dotfiles/modules-hm/apps/opencode/agents-bridge.ts" "$HOME/.config/opencode/plugins/agents-bridge.ts"
+
+                # Ensure package.json declares @opencode-ai/plugin.
                 if [ ! -f "$HOME/.config/opencode/package.json" ]; then
                   cat > "$HOME/.config/opencode/package.json" <<'EOF'
         {
           "type": "module",
-          "dependencies": { "@opencode-ai/plugin": "1.14.35", "mem0ai": "^3.0.10" },
+          "dependencies": { "@opencode-ai/plugin": "1.14.35" },
           "devDependencies": { "@types/bun": "latest" }
         }
         EOF
                 else
-                  # Add mem0ai if missing. Use a tiny node script to avoid
-                  # pulling in jq.
+                  # Ensure @opencode-ai/plugin is declared. Use a tiny node
+                  # script to avoid pulling in jq.
                   ${pkgs.nodejs}/bin/node -e '
                     const fs = require("fs");
                     const p = process.env.HOME + "/.config/opencode/package.json";
                     const pkg = JSON.parse(fs.readFileSync(p, "utf8"));
                     pkg.dependencies = pkg.dependencies || {};
-                    if (!pkg.dependencies["mem0ai"]) pkg.dependencies["mem0ai"] = "^3.0.10";
+                    delete pkg.dependencies["mem0ai"];
                     if (!pkg.dependencies["@opencode-ai/plugin"]) pkg.dependencies["@opencode-ai/plugin"] = "1.14.35";
                     fs.writeFileSync(p, JSON.stringify(pkg, null, 2) + "\n");
                   '
                 fi
 
-                if [ ! -d "$HOME/.config/opencode/node_modules/mem0ai" ] || [ ! -d "$HOME/.config/opencode/node_modules/@opencode-ai/plugin" ]; then
+                if [ ! -d "$HOME/.config/opencode/node_modules/@opencode-ai/plugin" ]; then
                   ${lib.getExe pkgs.bun} install --cwd "$HOME/.config/opencode" --no-save
                 fi
       ''

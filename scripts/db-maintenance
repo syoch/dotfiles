@@ -1,0 +1,88 @@
+#!/usr/bin/env bash
+# db-maintenance — compact & vacuum the opencode SQLite DB.
+#
+# Reclaims disk from the (often large) opencode-stable.db. Deleted rows leave
+# free pages that are NOT returned to the filesystem until a VACUUM. A full
+# in-place VACUUM needs ~DB-size scratch space, which is unavailable when
+# /home is nearly full, so we compact via `VACUUM INTO` on a filesystem with
+# room and swap the file.
+#
+# REQUIREMENTS / SAFETY:
+#   * opencode MUST be stopped (web service + all TUI sessions) before running.
+#   * Backs up the original to <db>.<ts>.bak (kept until you confirm).
+#   * Stage path defaults to /var/tmp (usually on /); override with STAGE=...
+#
+# Example (when not using opencode):
+#   bash scripts/db-maintenance            # checkpoint + VACUUM INTO + swap
+#   bash scripts/db-maintenance --no-start # as above (no service restart hint)
+
+set -eu
+
+DB="${OPENCODE_DB:-$HOME/.local/share/opencode/opencode-stable.db}"
+STAGE="${STAGE:-/var/tmp/opencode-stable.decompact.db}"
+PY="$(command -v python3 || true)"
+export LC_ALL=C.UTF-8
+
+if [ ! -f "$DB" ]; then
+  echo "db not found: $DB" >&2
+  exit 1
+fi
+if [ -z "$PY" ]; then
+  echo "python3 with sqlite3 is required" >&2
+  exit 1
+fi
+
+run_guard() {
+  local running
+  running="$(pgrep -af 'opencode (web|tui|run|serve)\b' || true)"
+  if [ -n "$running" ]; then
+    echo "ERROR: opencode appears to be running:" >&2
+    echo "$running" >&2
+    echo "Stop opencode (systemctl --user stop opencode + exit TUI) before maintenance." >&2
+    exit 1
+  fi
+}
+
+before="$(du -h "$DB" | cut -f1)"
+echo "DB: $DB (current: $before)"
+
+run_guard
+echo "vacuuming into $STAGE ..."
+"$PY" - "$DB" "$STAGE" <<'EOF'
+import sqlite3, os, sys, shutil
+db, stage = sys.argv[1], sys.argv[2]
+# sanity: read-only open to confirm readable + count
+ro = sqlite3.connect(f"file:{db}?mode=ro", uri=True)
+ro.execute("PRAGMA query_only=ON")
+sessions = ro.execute("SELECT count(*) FROM session").fetchone()[0]
+events   = ro.execute("SELECT count(*) FROM event").fetchone()[0]
+ro.close()
+print(f"pre-check: sessions={sessions} events={events}")
+
+if os.path.exists(stage):
+    os.remove(stage)
+# compact to a fresh file (also flushes WAL)
+con = sqlite3.connect(db)
+con.execute("PRAGMA wal_checkpoint(TRUNCATE)")
+con.execute("VACUUM INTO ?", (stage,))
+con.close()
+
+# verify the compacted file before swapping
+chk = sqlite3.connect(f"file:{stage}?mode=ro", uri=True)
+chk.execute("PRAGMA query_only=ON")
+s2 = chk.execute("SELECT count(*) FROM session").fetchone()[0]
+e2 = chk.execute("SELECT count(*) FROM event").fetchone()[0]
+chk.close()
+if (s2, e2) != (sessions, events):
+    print(f"ABORT: verification mismatch {sessions},{events} vs {s2},{e2}")
+    sys.exit(1)
+print(f"verified: sessions={s2} events={e2}")
+EOF
+
+echo "swapping DB ..."
+bak="$DB.$(date +%s).bak"
+mv "$DB" "$bak"
+mv "$STAGE" "$DB"
+after="$(du -h "$DB" | cut -f1)"
+echo "done: $before -> $after  (backup kept at $bak)"
+echo "Finished. Verify with:  ls -lh '$DB'  /  restart opencode."

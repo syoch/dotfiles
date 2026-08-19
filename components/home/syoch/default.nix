@@ -54,7 +54,9 @@
   ];
   hm-module.opencode.enable = true;
   hm-module.opencode.tasks.enable = true;
-  hm-module.opencode.auto-skill.enable = true;
-  hm-module.opencode.auto-notes.enable = true;
+  hm-module.opencode.agents-tool.enable = true;
+  hm-module.opencode.agents-bridge.enable = true;
+  hm-module.opencode.global-agents.enable = true;
+  hm-module.opencode.agents-catalog.enable = true;
   programs.zsh.shellAliases."opencode" = "OPENCODE_ENABLE_EXA=1 opencode";
 }
