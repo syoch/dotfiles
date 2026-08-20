@@ -26,11 +26,28 @@ in
 
     agents-bridge = {
       enable = mkEnableOption ''
-        agents-bridge plugin: reads the .agents catalog manifests
-        (./.agents/MANIFEST.md and ~/.agents/**/MANIFEST.md) and injects a
-        [agents-bridge] block into the system prompt via
+        agents-bridge plugin: reads the .agents catalog (dynamically scanned
+        from SKILL.md trees under ~/.agents/ and <cwd>/.agents/) and injects
+        a compact [agents-bridge] block into the system prompt via
         experimental.chat.system.transform, so the agent knows which reusable
         scripts/skills are available without searching the directory tree.
+      '';
+    };
+
+    design-agent = {
+      enable = mkEnableOption ''
+        design agent: consult-only primary agent for design discussions
+        (requirements elicitation, logic/architecture design, tradeoff
+        analysis). Never implements or pushes toward implementation; records
+        settled design decisions via the memory tool (design/<topic>).
+      '';
+    };
+
+    memory-tool = {
+      enable = mkEnableOption ''
+        memory tools: durable long-term memory at project (.agent/memory/)
+        and global (~/.config/opencode/memory/, managed from config/memory/)
+        scope. memory_save (save|overwrite|append) / get / list / remove.
       '';
     };
 
@@ -46,9 +63,9 @@ in
     agents-catalog = {
       enable = mkEnableOption ''
         symlink ~/.agents to the user-scope agent catalog managed in this
-        repo (config/agents). Catalog layout: MANIFEST.md + tech-stack
-        subdirectories, each containing MANIFEST.md and per-skill SKILL.md
-        directories.
+        repo (config/agents). Catalog layout: tech-stack subdirectories,
+        each containing per-skill SKILL.md directories (frontmatter-driven,
+        no MANIFEST).
       '';
     };
   };
@@ -64,6 +81,10 @@ in
         // lib.optionalAttrs cfg.agents-tool.enable {
           # catalog management custom tools (agents_*) run without per-use prompts
           "agents_*" = "allow";
+        }
+        // lib.optionalAttrs cfg.memory-tool.enable {
+          # long-term memory custom tools (memory_*) run without per-use prompts
+          "memory_*" = "allow";
         };
       };
     };
@@ -93,6 +114,22 @@ in
       ''
     );
 
+    # Manage the long-term memory tool from the repo.
+    home.activation.opencodeMemoryTool = mkIf cfg.memory-tool.enable (
+      lib.hm.dag.entryAfter [ "writeBoundary" ] ''
+        mkdir -p "$HOME/.config/opencode/tools"
+        ln -sfn "${config.home.homeDirectory}/dotfiles/modules-hm/apps/opencode/memory.ts" "$HOME/.config/opencode/tools/memory.ts"
+      ''
+    );
+
+    # Manage the global long-term memory dir from the repo (git-managed).
+    home.activation.opencodeMemoryLink = mkIf cfg.memory-tool.enable (
+      lib.hm.dag.entryAfter [ "writeBoundary" ] ''
+        mkdir -p "$HOME/.config/opencode"
+        ln -sfn "${config.home.homeDirectory}/dotfiles/config/memory" "$HOME/.config/opencode/memory"
+      ''
+    );
+
     # Manage the global AGENTS.md (behavioral rules) from the repo.
     home.activation.opencodeGlobalAgents = mkIf cfg.global-agents.enable (
       lib.hm.dag.entryAfter [ "writeBoundary" ] ''
@@ -101,10 +138,18 @@ in
       ''
     );
 
+    # Manage the custom design agent (consult-only primary agent) from the repo.
+    home.activation.opencodeDesignAgent = mkIf cfg.design-agent.enable (
+      lib.hm.dag.entryAfter [ "writeBoundary" ] ''
+        mkdir -p "$HOME/.config/opencode/agents"
+        ln -sfn "${config.home.homeDirectory}/dotfiles/modules-hm/apps/opencode/agents/design.md" "$HOME/.config/opencode/agents/design.md"
+      ''
+    );
+
     # opencode resolves imports of symlinked plugin/tool sources from their
     # realpath (this repo) — expose the config-dir node_modules there so
     # runtime imports like '@opencode-ai/plugin' keep resolving.
-    home.activation.opencodeNodeModules = mkIf (cfg.tasks.enable || cfg.agents-bridge.enable) (
+    home.activation.opencodeNodeModules = mkIf (cfg.tasks.enable || cfg.agents-bridge.enable || cfg.agents-tool.enable || cfg.memory-tool.enable) (
       lib.hm.dag.entryAfter [ "writeBoundary" ] ''
         ln -sfn "$HOME/.config/opencode/node_modules" "${config.home.homeDirectory}/dotfiles/modules-hm/apps/opencode/node_modules"
       ''
@@ -115,8 +160,7 @@ in
     # ~/dotfiles/config/agents are reflected immediately without a rebuild.
     home.activation.opencodeAgentsLink = mkIf cfg.agents-catalog.enable (
       lib.hm.dag.entryAfter [ "writeBoundary" ] ''
-        ln -sfn "${config.home.homeDirectory}/dotfiles/config/agents" "$HOME/.agents"
-      ''
+        ln -sfn "${config.home.homeDirectory}/dotfiles/config/agents" "$HOME/.agents"      ''
     );
 
     home.activation.opencodePlugins = mkIf cfg.agents-bridge.enable (

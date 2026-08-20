@@ -11,8 +11,10 @@ auto-generated from tool-call patterns.
 |---|---|---|
 | Agents-bridge | `agents-bridge.ts` (local plugin) | Reads the `.agents` catalog manifests and injects a compact `[agents-bridge]` block into the system prompt on every session start. |
 | Global agent rules | `AGENTS.global.md` -> `~/.config/opencode/AGENTS.md` | Behavioral rules: native-first processing, lossless collection, /tmp workspace protection, `.agents` catalog management, and the knowledge-driven skillification flow (§4). |
+| Design agent | `agents/design.md` -> `~/.config/opencode/agents/design.md` | Consult-only primary agent (`design`) for design discussions. Requirements elicitation, logic/architecture design, tradeoff analysis. Never implements or pushes toward implementation; records settled design decisions to `<project>/.agent/design/`. |
 | User-scope catalog | `config/agents/` -> `~/.agents` | Tech-stack-categorized reusable assets (`<category>/<skill>/SKILL.md`), symlinked into the home dir. Catalog is derived dynamically from the SKILL.md tree (no MANIFEST). |
 | Agents tools | `agents.ts` (tools) | `agents_categories` / `agents_list` / `agents_add` / `agents_update` / `agents_rename` / `agents_remove` / `agents_show` — manage the `.agents` catalogs by scanning the directory tree and SKILL.md frontmatter. |
+| Memory tools | `memory.ts` (tools) | Durable long-term memory at project (`.agent/memory/`) and global (`~/.config/opencode/memory`, managed from `config/memory/`) scope: `memory_save` (save/overwrite/append) / `memory_get` / `memory_list` / `memory_remove`. |
 | Task tool | `tasks.ts` (tools) | tmux-backed background tasks. |
 
 auto-skill / auto-notes were **removed**: repetition-based auto-generation
@@ -51,6 +53,46 @@ is the single source of truth.
 New categories are **not** auto-created by the tools (unknown categories are
 rejected); create them with the Shell tool when the user requests it.
 
+## Design agent (design)
+
+A consult-only `primary` agent for design discussions — the first step in a
+**Design → Plan → Build** workflow. Switch to it with **Tab** from anywhere;
+as a primary agent it shares the current session context, so a Design→Plan
+handoff within the same session needs no copying.
+
+- **Consult only**: never implements, never pushes toward implementation
+  ("if you agree, I'll implement" style output is forbidden), never writes
+  code or implementation steps. Redirects implementation needs to Plan/Build.
+- **Investigation**: may use `read`/`glob`/`grep`/`list` and `bash` for
+  read-only investigation. Mutating commands (including ambiguous
+  build/rebuild/cleanup-style scripts) are never run; side-effect-ambiguous
+  commands are proposed in chat for the human to run.
+- **Design record**: settled decisions are saved with the memory tool
+  (`memory_save scope=project, topic=design/<topic>` ->
+  `<project>/.agent/memory/design/<topic>.md`) as
+  `決定事項 / 未決事項 / 残存懸念`, so design conclusions survive
+  compaction/session switches.
+- **Output format**: 分析 → 考慮した点（要約）→ 選択肢比較 → 推奨 →
+  未決論点・確認質問, closing with explicit decisions/open points/pending
+  risks.
+
+Source: `modules-hm/apps/opencode/agents/design.md`
+(symlinked to `~/.config/opencode/agents/design.md`).
+
+## Memory tools
+
+Durable long-term memory across sessions, distinct from the `.agents` skill
+catalog (reusable procedures) — memory holds **context/knowledge** notes.
+
+- Scopes: `project` (`<cwd>/.agent/memory/<topic>.md`, git-managed) and
+  `global` (`~/.config/opencode/memory/<topic>.md`, git-managed via
+  `config/memory/`)
+- `memory_save` — write with `mode`: `save` (new only, error if exists),
+  `overwrite` (replace), `append` (extend)
+- `memory_get` / `memory_list` / `memory_remove`
+- Used by the design agent for design records (`design/<topic>`) and by any
+  agent for lasting context.
+
 ## Global agent rules
 
 `~/.config/opencode/AGENTS.md` is a symlink to
@@ -76,6 +118,7 @@ rebuild. Activations:
 - `opencodeTools` — symlinks `tasks.ts`
 - `opencodeAgentsTool` — symlinks `agents.ts`
 - `opencodeGlobalAgents` — symlinks `AGENTS.md`
+- `opencodeDesignAgent` — symlinks `agents/design.md` custom agent
 - `opencodeAgentsLink` — symlinks `~/.agents -> ~/dotfiles/config/agents`
 - `opencodeNodeModules` — symlinks the config-dir node_modules into the repo
   source dir so runtime imports of symlinked sources keep resolving
