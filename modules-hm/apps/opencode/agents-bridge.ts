@@ -6,7 +6,10 @@ import { existsSync } from "fs"
 const HOME = process.env.HOME ?? "~"
 const USER_SCOPE = join(HOME, ".agents")
 const PROJECT_SCOPE = join(process.cwd(), ".agents")
+const PROJECT_MEMORY = join(process.cwd(), ".agent", "memory")
+const GLOBAL_MEMORY = join(HOME, ".config", "opencode", "memory")
 const MAX_ENTRIES_PER_SCOPE = 40
+const MAX_MEMORY_TOPICS = 30
 
 type CatalogEntry = {
   name: string
@@ -97,10 +100,40 @@ async function readProjectCatalog(): Promise<string[]> {
   return entries.map((e) => formatEntry(e, "  - "))
 }
 
+async function walkMarkdownTopics(root: string, dir: string, acc: string[], max: number): Promise<void> {
+  let entries
+  try {
+    entries = await readdir(dir, { withFileTypes: true })
+  } catch {
+    return
+  }
+  for (const e of entries) {
+    if (e.name.startsWith(".") || e.name === "README.md") continue
+    if (acc.length >= max) return
+    const p = join(dir, e.name)
+    if (e.isDirectory()) {
+      await walkMarkdownTopics(root, p, acc, max)
+    } else if (e.name.endsWith(".md")) {
+      acc.push(p.slice(root.length).replace(/^[/\\]/, "").replace(/\.md$/, ""))
+    }
+  }
+}
+
+async function readMemoryTopics(base: string): Promise<string[]> {
+  const acc: string[] = []
+  await walkMarkdownTopics(base, base, acc, MAX_MEMORY_TOPICS)
+  return acc.sort()
+}
+
 const AgentsBridgePlugin: Plugin = async () => {
   return {
     "experimental.chat.system.transform": async (_input, output) => {
-      const [userLines, projectLines] = await Promise.all([readUserCatalog(), readProjectCatalog()])
+      const [userLines, projectLines, projectMem, globalMem] = await Promise.all([
+        readUserCatalog(),
+        readProjectCatalog(),
+        readMemoryTopics(PROJECT_MEMORY),
+        readMemoryTopics(GLOBAL_MEMORY),
+      ])
 
       const blocks: string[] = []
       if (projectLines.length > 0) {
@@ -109,11 +142,17 @@ const AgentsBridgePlugin: Plugin = async () => {
       if (userLines.length > 0) {
         blocks.push(`[agents-bridge] User-scope asset catalog (${USER_SCOPE}/):\n${userLines.join("\n")}`)
       }
+      if (projectMem.length > 0) {
+        blocks.push(`[agents-bridge] Project memory topics: ${projectMem.join(", ")} (read with memory_get)`)
+      }
+      if (globalMem.length > 0) {
+        blocks.push(`[agents-bridge] Global memory topics: ${globalMem.join(", ")} (read with memory_get)`)
+      }
       if (blocks.length === 0) return
 
       const block =
         blocks.join("\n") +
-        "\nRead the corresponding SKILL.md under .agents/ when a task matches an entry."
+        "\nRead the corresponding SKILL.md under .agents/ or memory topic when a task matches."
 
       const system = output.system
       const idx = system.findIndex((s) => s.includes("[agents-bridge]"))

@@ -31,6 +31,18 @@
   プロジェクトスコープは `category="project"` として平坦ルート（`.agents/<name>/SKILL.md`）。
 - **操作は `agents_*` ツールを使う**（`agents_categories` / `agents_list` / `agents_add` / `agents_update` / `agents_rename` / `agents_remove` / `agents_show`）。Write/Shell を直接使うより安全で、MANIFEST 編集の手間がない。未知カテゴリは拒否される（`agents_categories` で確認すること）。
 
+## 長期記憶と再利用資産の能動的利用 (memory_* / agents_*)
+
+ユーザーに指示されなくても、次のように**能動的・自律的**にツールを呼び出してよい（呼ぶべき）:
+
+- **セッション開始時・タスク着手前**: プロジェクトの長期記憶（`.agent/memory/`）とスキルカタログ（`.agents`）に有用な情報が無いか、`memory_list` / `memory_get`、`agents_list` / `agents_categories` で確認する。**過去の決定・方針・既存スキルがあれば、それを前提に作業する**（再発明・再調査をしない）。
+- **タスク中に方針・決定・重要な発見が成立したら**: `memory_save` で記録する（ユーザーに「記録して」と言われなくても、プロジェクトに残す価値があると判断したら保存する）。
+  - スコープ: プロジェクト固有は `project`、汎用・横断的な知見は `global`
+  - トピック命名: `decision/<件名>`・`conventions/<規定>`・`design/<課題>` などの名前空間
+  - モード: 新規 `save` / 更新 `overwrite` / 追記 `append`
+- **既存スキルがタスクにマッチする場合**: `agents_show` で内容を確認して手順を適用する。適用できない場合のみゼロから作る。
+- これらのツール呼び出しは作業の一部であり、ユーザーへの確認を待たずに実行してよい（ただし判断を誤りそうな破壊的操作は除く）。
+
 ## 知識駆動スキル化 (Knowledge-Driven Skillification)
 
 自動生成には依存しない。**知識を得た時点で能動的にスキル化**し、資産として定着させること。

@@ -30,10 +30,14 @@ SKILL.md trees and reads each file's frontmatter (`name`/`description`/`args`):
 - **User scope** `~/.agents/<category>/<name>/SKILL.md`
 - **Project scope** `<cwd>/.agents/<name>/SKILL.md`
 
-It renders a compact list (`category/name (args): desc`), so the agent knows
-which reusable assets exist and where to read the full details (the co-located
-`SKILL.md`). No MANIFEST.md is maintained — the directory tree + frontmatter
-is the single source of truth.
+It also indexes **long-term memory topics** (`<cwd>/.agent/memory/**`,
+`~/.config/opencode/memory/**`) and injects them so agents autonomously
+consult `memory_get`/`memory_save` without being told to.
+
+It renders a compact list (`category/name (args): desc`) plus the memory
+topic index, so the agent knows which reusable assets and stored context
+exist and where to read the full details. No MANIFEST.md is maintained — the
+directory tree + frontmatter is the single source of truth.
 
 ## Agents tools
 
