@@ -12,9 +12,9 @@ auto-generated from tool-call patterns.
 | Agents-bridge | `agents-bridge.ts` (local plugin) | Reads the `.agents` catalog manifests and injects a compact `[agents-bridge]` block into the system prompt on every session start. |
 | Global agent rules | `AGENTS.global.md` -> `~/.config/opencode/AGENTS.md` | Behavioral rules: native-first processing, lossless collection, /tmp workspace protection, `.agents` catalog management, and the knowledge-driven skillification flow (§4). |
 | Design agent | `agents/design.md` -> `~/.config/opencode/agents/design.md` | Consult-only primary agent (`design`) for design discussions. Requirements elicitation, logic/architecture design, tradeoff analysis. Never implements or pushes toward implementation; records settled design decisions to `<project>/.agent/design/`. |
-| User-scope catalog | `config/agents/` -> `~/.agents` | Tech-stack-categorized reusable assets (`<category>/<skill>/SKILL.md`), symlinked into the home dir. Catalog is derived dynamically from the SKILL.md tree (no MANIFEST). |
+| User-scope catalog | `config/agents/skills/` -> `~/.agents/skills/` | Tech-stack-categorized reusable assets (`<category>/<skill>/SKILL.md`), symlinked into the home dir. Catalog is derived dynamically from the SKILL.md tree (no MANIFEST). |
 | Agents tools | `agents.ts` (tools) | `agents_categories` / `agents_list` / `agents_add` / `agents_update` / `agents_rename` / `agents_remove` / `agents_show` — manage the `.agents` catalogs by scanning the directory tree and SKILL.md frontmatter. |
-| Memory tools | `memory.ts` (tools) | Durable long-term memory at project (`.agent/memory/`) and global (`~/.config/opencode/memory`, managed from `config/memory/`) scope: `memory_save` (save/overwrite/append) / `memory_get` / `memory_list` / `memory_remove`. |
+| Memory tools | `memory.ts` (tools) | Durable long-term memory at project (`.agents/memory/`) and global (`~/.agents/memory/`) scope: `memory_save` (save/overwrite/append) / `memory_get` / `memory_list` / `memory_remove`. |
 | Task tool | `tasks.ts` (tools) | tmux-backed background tasks. |
 
 auto-skill / auto-notes were **removed**: repetition-based auto-generation
@@ -27,11 +27,11 @@ agent itself per the global AGENTS.md §4 flow.
 On session start, `experimental.chat.system.transform` dynamically scans the
 SKILL.md trees and reads each file's frontmatter (`name`/`description`/`args`):
 
-- **User scope** `~/.agents/<category>/<name>/SKILL.md`
-- **Project scope** `<cwd>/.agents/<name>/SKILL.md`
+- **User scope** `~/.agents/skills/<category>/<name>/SKILL.md`
+- **Project scope** `<cwd>/.agents/skills/<name>/SKILL.md`
 
-It also indexes **long-term memory topics** (`<cwd>/.agent/memory/**`,
-`~/.config/opencode/memory/**`) and injects them so agents autonomously
+It also indexes **long-term memory topics** (`<cwd>/.agents/memory/**`,
+`~/.agents/memory/**`) and injects them so agents autonomously
 consult `memory_get`/`memory_save` without being told to.
 
 It renders a compact list (`category/name (args): desc`) plus the memory
@@ -73,7 +73,7 @@ handoff within the same session needs no copying.
   commands are proposed in chat for the human to run.
 - **Design record**: settled decisions are saved with the memory tool
   (`memory_save scope=project, topic=design/<topic>` ->
-  `<project>/.agent/memory/design/<topic>.md`) as
+  `<project>/.agents/memory/design/<topic>.md`) as
   `決定事項 / 未決事項 / 残存懸念`, so design conclusions survive
   compaction/session switches.
 - **Output format**: 分析 → 考慮した点（要約）→ 選択肢比較 → 推奨 →
@@ -88,9 +88,8 @@ Source: `modules-hm/apps/opencode/agents/design.md`
 Durable long-term memory across sessions, distinct from the `.agents` skill
 catalog (reusable procedures) — memory holds **context/knowledge** notes.
 
-- Scopes: `project` (`<cwd>/.agent/memory/<topic>.md`, git-managed) and
-  `global` (`~/.config/opencode/memory/<topic>.md`, git-managed via
-  `config/memory/`)
+- Scopes: `project` (`<cwd>/.agents/memory/<topic>.md`, git-managed) and
+  `global` (`~/.agents/memory/<topic>.md`, git-managed)
 - `memory_save` — write with `mode`: `save` (new only, error if exists),
   `overwrite` (replace), `append` (extend)
 - `memory_get` / `memory_list` / `memory_remove`
@@ -108,7 +107,7 @@ catalog (reusable procedures) — memory holds **context/knowledge** notes.
 - `.agents` catalog layout (SKILL.md tree + frontmatter as the source of truth)
 - Knowledge-driven skillification: when knowledge is gained (non-obvious
   procedure, pitfalls, recovery steps, repetition), skillify it immediately
-  into `<scope>/.agents/<category>/<name>/SKILL.md` via the `agents_*` tools,
+  into `<scope>/.agents/skills/<category>/<name>/SKILL.md` via the `agents_*` tools,
   then verify it is reproducible.
 
 ## Activation

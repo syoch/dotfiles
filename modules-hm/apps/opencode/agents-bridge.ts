@@ -4,8 +4,8 @@ import { join } from "path"
 import { existsSync } from "fs"
 
 const HOME = process.env.HOME ?? "~"
-const USER_SCOPE = join(HOME, ".agents")
-const PROJECT_SCOPE = join(process.cwd(), ".agents")
+const USER_SCOPE = join(HOME, ".agents", "skills")
+const PROJECT_SCOPE = join(process.cwd(), ".agents", "skills")
 const PROJECT_MEMORY = join(process.cwd(), ".agent", "memory")
 const GLOBAL_MEMORY = join(HOME, ".config", "opencode", "memory")
 const MAX_ENTRIES_PER_SCOPE = 40

@@ -1,3 +1,8 @@
+---
+name: orchestration
+description: Use when leading a multi-agent orchestration discussion: launch proposer/critic/design participants via orchestestrate_run, manage rounds, and integrate results. Trigger keywords: orchestrate_run, parallel discussion, sequential rounds, proposer critic design, leader agent.
+---
+
 # オーケストレーションガイド（leader 向け）
 
 リーダーエージェントが議論・調査を進行する際の典型パターン。タスクの実態に合わせて柔軟に適用すること（事前の stages 決め打ちはしない）。

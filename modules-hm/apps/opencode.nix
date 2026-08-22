@@ -27,7 +27,7 @@ in
     agents-bridge = {
       enable = mkEnableOption ''
         agents-bridge plugin: reads the .agents catalog (dynamically scanned
-        from SKILL.md trees under ~/.agents/ and <cwd>/.agents/) and injects
+        from SKILL.md trees under ~/.agents/skills/ and <cwd>/.agents/skills/) and injects
         a compact [agents-bridge] block into the system prompt via
         experimental.chat.system.transform, so the agent knows which reusable
         scripts/skills are available without searching the directory tree.
@@ -45,7 +45,7 @@ in
 
     memory-tool = {
       enable = mkEnableOption ''
-        memory tools: durable long-term memory at project (.agent/memory/)
+        memory tools: durable long-term memory at project (.agents/memory/) and global (~/.agents/memory/)
         and global (~/.config/opencode/memory/, managed from config/memory/)
         scope. memory_save (save|overwrite|append) / get / list / remove.
       '';

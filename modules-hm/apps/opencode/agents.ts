@@ -4,8 +4,8 @@ import { join, resolve } from "path"
 import { existsSync } from "fs"
 
 const HOME = process.env.HOME ?? "~"
-const USER_SCOPE = resolve(join(HOME, ".agents"))
-const PROJECT_SCOPE = resolve(join(process.cwd(), ".agents"))
+const USER_SCOPE = resolve(join(HOME, ".agents", "skills"))
+const PROJECT_SCOPE = resolve(join(process.cwd(), ".agents", "skills"))
 
 const NAME_RE = /^[a-z0-9]+(-[a-z0-9]+)*$/
 const CAT_RE = /^[a-z0-9]+(-[a-z0-9]+)*$/

@@ -19,23 +19,24 @@
 ## スキル・アセット管理 (.agents)
 
 - 再利用可能なスクリプト・スキル・プロジェクト固有の知見は `.agents` ディレクトリで管理する。タスク着手前に必ずカタログを参照し、車輪の再発明を避けること。
-  - ユーザースコープ: `~/.agents/`（dotfiles リポジトリ `config/agents/` を経由して管理・配置されている）
-  - プロジェクトスコープ: `./.agents/`
+  - ユーザースコープ: `~/.agents/skills/`（dotfiles リポジトリ `config/agents/skills/` を経由して管理・配置されている）
+  - プロジェクトスコープ: `./.agents/skills/`
 - カタログは **ディレクトリ構造と SKILL.md の frontmatter** が唯一の基準（MANIFEST.md は廃止）。`agents-bridge` プラグインが動的に走査してシステムプロンプトへ注入する。
   ```
   .agents/
-  └── <カテゴリ>/
-      └── <スキル名>/
-          └── SKILL.md      # frontmatter: name / description / args（任意）
+  └── skills/
+      └── <カテゴリ>/
+          └── <スキル名>/
+              └── SKILL.md      # frontmatter: name / description / args（任意）
   ```
-  プロジェクトスコープは `category="project"` として平坦ルート（`.agents/<name>/SKILL.md`）。
+  プロジェクトスコープは `category="project"` として平坦ルート（`.agents/skills/<name>/SKILL.md`）。
 - **操作は `agents_*` ツールを使う**（`agents_categories` / `agents_list` / `agents_add` / `agents_update` / `agents_rename` / `agents_remove` / `agents_show`）。Write/Shell を直接使うより安全で、MANIFEST 編集の手間がない。未知カテゴリは拒否される（`agents_categories` で確認すること）。
 
 ## 長期記憶と再利用資産の能動的利用 (memory_* / agents_*)
 
 ユーザーに指示されなくても、次のように**能動的・自律的**にツールを呼び出してよい（呼ぶべき）:
 
-- **セッション開始時・タスク着手前**: プロジェクトの長期記憶（`.agent/memory/`）とスキルカタログ（`.agents`）に有用な情報が無いか、`memory_list` / `memory_get`、`agents_list` / `agents_categories` で確認する。**過去の決定・方針・既存スキルがあれば、それを前提に作業する**（再発明・再調査をしない）。
+- **セッション開始時・タスク着手前**: プロジェクトの長期記憶（`.agents/memory/`）とスキルカタログ（`.agents`）に有用な情報が無いか、`memory_list` / `memory_get`、`agents_list` / `agents_categories` で確認する。**過去の決定・方針・既存スキルがあれば、それを前提に作業する**（再発明・再調査をしない）。
 - **タスク中に方針・決定・重要な発見が成立したら**: `memory_save` で記録する（ユーザーに「記録して」と言われなくても、プロジェクトに残す価値があると判断したら保存する）。
   - スコープ: プロジェクト固有は `project`、汎用・横断的な知見は `global`
   - トピック命名: `decision/<件名>`・`conventions/<規定>`・`design/<課題>` などの名前空間
@@ -61,8 +62,8 @@
 
 1. **発生したら即時スキル化を検討**する。タスク末のトリアージを待たず、知識が鮮明なうちに昇格する。
 2. **分類して保存先を決める**:
-   - ユーザースコープ（`~/.agents/<カテゴリ>/`）: 汎用（技術非依存/複数プロジェクト横断）や技術カテゴリ（nix, git, rust, node, python, apk, web, opencode 等）に属するもの
-   - プロジェクトスコープ（`./.agents/`）: 特定プロジェクトに強く依存するもの（カテゴリ `"project"`）
+   - ユーザースコープ（`~/.agents/skills/<カテゴリ>/`）: 汎用（技術非依存/複数プロジェクト横断）や技術カテゴリ（nix, git, rust, node, python, apk, web, opencode 等）に属するもの
+   - プロジェクトスコープ（`./.agents/skills/`）: 特定プロジェクトに強く依存するもの（カテゴリ `"project"`）
 3. **カテゴリを決め、`agents_categories` で存在を確認**する。無ければ新設せず、最終報告で新カテゴリ候補として提案する（作成はユーザーが望んだ時のみ）。
 4. **`agents_add` で SKILL.md を作成**する（`category`, `name`, `description`, `body`, `args?`）。frontmatter の `name` はディレクトリ名と一致させるようツールが強制する。
 5. **検証する**: `agents_show` で内容を確認し、手順が再実行可能であることを確認、不備があれば `agents_update` で修正する。

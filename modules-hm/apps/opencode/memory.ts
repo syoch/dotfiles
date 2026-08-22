@@ -4,8 +4,8 @@ import { join, resolve, dirname } from "path"
 import { existsSync } from "fs"
 
 const HOME = process.env.HOME ?? "~"
-const PROJECT_MEMORY = resolve(join(process.cwd(), ".agent", "memory"))
-const GLOBAL_MEMORY = resolve(join(HOME, ".config", "opencode", "memory"))
+const PROJECT_MEMORY = resolve(join(process.cwd(), ".agents", "memory"))
+const GLOBAL_MEMORY = resolve(join(HOME, ".agents", "memory"))
 const STALE_DAYS = 7
 
 function ageDaysOf(mtimeMs: number): number {
@@ -43,7 +43,7 @@ async function ensureBase(base: string) {
 
 export const save = tool({
   description:
-    "Save a long-term memory note at project (.agent/memory/) or global (~/.config/opencode/memory/) scope. mode: 'save' creates only if the topic does not exist (error if it does), 'overwrite' replaces existing (or creates), 'append' appends to the end (or creates).",
+    "Save a long-term memory note at project (.agents/memory/) or global (~/.agents/memory/) scope. mode: 'save' creates only if the topic does not exist (error if it does), 'overwrite' replaces existing (or creates), 'append' appends to the end (or creates).",
   args: {
     scope: tool.schema.string().describe("'project' or 'global'"),
     topic: tool.schema.string().describe("Topic name (lowercase alphanumeric, '/' allowed for namespacing, e.g. design/agent)"),

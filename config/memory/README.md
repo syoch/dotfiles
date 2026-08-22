@@ -12,5 +12,5 @@ Home Manager activation (`opencodeMemoryLink`) により `~/dotfiles/config/memo
 ## 役割分担
 
 - `config/memory/`（本ディレクトリ・グローバルスコープ）: マシン横断の汎用文脈（ユーザー設定・運用方針等）
-- `<プロジェクト>/.agent/memory/`（プロジェクトスコープ）: プロジェクト固有の文脈・設計記録（`design/<課題名>` 等）
+- `<プロジェクト>/.agents/memory/`（プロジェクトスコープ）: プロジェクト固有の文脈・設計記録（`design/<課題名>` 等）
 - `config/agents/`（`.agents` カタログ）: 再利用可能な**手順・スキル**（参照資産）。メモリ（文脈）とは別物

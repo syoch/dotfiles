@@ -46,7 +46,7 @@ permission:
 ## 設計の記録（memory ツール）
 
 - 複数論点を扱った重要な設計では、論点が確定するたびに `memory_save` で保存する
-  - スコープ: `project`（保存先 `<プロジェクト>/.agent/memory/`）
+  - スコープ: `project`（保存先 `<プロジェクト>/.agents/memory/`）
   - トピック: `design/<課題名>`（例: `design/agent`）
   - モード: 新規は `save`、更新は `overwrite`、追記は `append`
 - **設計記録の保存は `memory_save` ツールのみで行うこと**（write/edit ツールは無効・bash のリダイレクト書き込みは禁止コマンドのため使わない）
