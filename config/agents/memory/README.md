@@ -1,7 +1,7 @@
 # グローバル長期記憶 (Global Long-term Memory)
 
-本ディレクトリは `~/.config/opencode/memory/`（opencode のグローバル長期記憶）の管理元。
-Home Manager activation (`opencodeMemoryLink`) により `~/dotfiles/config/memory` → `~/.config/opencode/memory` へ symlink され、編集が即反映される。
+本ディレクトリは `~/.agents/memory/`（opencode のグローバル長期記憶）の管理元。
+`~/.agents` → `~/dotfiles/config/agents` シンボリックリンクにより、編集が即反映される。
 
 ## 使い方
 
@@ -11,6 +11,6 @@ Home Manager activation (`opencodeMemoryLink`) により `~/dotfiles/config/memo
 
 ## 役割分担
 
-- `config/memory/`（本ディレクトリ・グローバルスコープ）: マシン横断の汎用文脈（ユーザー設定・運用方針等）
+- `config/agents/memory/`（本ディレクトリ・グローバルスコープ）: マシン横断の汎用文脈（ユーザー設定・運用方針等）
 - `<プロジェクト>/.agents/memory/`（プロジェクトスコープ）: プロジェクト固有の文脈・設計記録（`design/<課題名>` 等）
-- `config/agents/`（`.agents` カタログ）: 再利用可能な**手順・スキル**（参照資産）。メモリ（文脈）とは別物
+- `config/agents/skills/`（`.agents/skills` カタログ）: 再利用可能な**手順・スキル**（参照資産）。メモリ（文脈）とは別物

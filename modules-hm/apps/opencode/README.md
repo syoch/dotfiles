@@ -5,13 +5,24 @@ repo-managed harness. Skill creation is **knowledge-driven** (the global
 AGENTS.md instructs the agent to skillify knowledge as it is gained), not
 auto-generated from tool-call patterns.
 
+## Feature options
+
+| Option | Behavior |
+|---|---|
+| `tasks` | tmux-backed background task tool (`tasks.ts`) |
+| `agents` | `.agents` catalog: symlink `~/.agents`, enable `agents_*` tools, activate agents-bridge plugin |
+| `design-agent` | Consult-only primary agent for design discussions |
+| `memory-tool` | Long-term memory tools at project/global scope |
+| `global-agents` | Global behavioral rules file (`AGENTS.md`) |
+| `orchestration` | Multi-agent orchestration plugin + leader/proposer/critic agents |
+
 ## What's enabled
 
 | Feature | Source | Behavior |
 |---|---|---|
 | Agents-bridge | `agents-bridge.ts` (local plugin) | Reads the `.agents` catalog manifests and injects a compact `[agents-bridge]` block into the system prompt on every session start. |
 | Global agent rules | `AGENTS.global.md` -> `~/.config/opencode/AGENTS.md` | Behavioral rules: native-first processing, lossless collection, /tmp workspace protection, `.agents` catalog management, and the knowledge-driven skillification flow (§4). |
-| Design agent | `agents/design.md` -> `~/.config/opencode/agents/design.md` | Consult-only primary agent (`design`) for design discussions. Requirements elicitation, logic/architecture design, tradeoff analysis. Never implements or pushes toward implementation; records settled design decisions to `<project>/.agent/design/`. |
+| Design agent | `agents/design.md` -> `~/.config/opencode/agents/design.md` | Consult-only primary agent (`design`) for design discussions. Requirements elicitation, logic/architecture design, tradeoff analysis. Never implements or pushes toward implementation; records settled design decisions to `<project>/.agents/memory/`. |
 | User-scope catalog | `config/agents/skills/` -> `~/.agents/skills/` | Tech-stack-categorized reusable assets (`<category>/<skill>/SKILL.md`), symlinked into the home dir. Catalog is derived dynamically from the SKILL.md tree (no MANIFEST). |
 | Agents tools | `agents.ts` (tools) | `agents_categories` / `agents_list` / `agents_add` / `agents_update` / `agents_rename` / `agents_remove` / `agents_show` — manage the `.agents` catalogs by scanning the directory tree and SKILL.md frontmatter. |
 | Memory tools | `memory.ts` (tools) | Durable long-term memory at project (`.agents/memory/`) and global (`~/.agents/memory/`) scope: `memory_save` (save/overwrite/append) / `memory_get` / `memory_list` / `memory_remove`. |
@@ -112,17 +123,12 @@ catalog (reusable procedures) — memory holds **context/knowledge** notes.
 
 ## Activation
 
-All managed sources (plugins, tools, AGENTS.md) are out-of-store symlinks
-into `~/dotfiles/modules-hm/apps/opencode/`, so edits are live without a
-rebuild. Activations:
+All managed sources (plugins, tools, AGENTS.md) are declared as out-of-store
+symlinks via `home.file` with `config.lib.file.mkOutOfStoreSymlink`, so edits
+are live without a rebuild. Only imperative operations remain in activation:
 
-- `opencodePlugins` — symlinks `agents-bridge.ts`, ensures `package.json` and
-  `node_modules` (@opencode-ai/plugin) exist under `~/.config/opencode`
-- `opencodeTools` — symlinks `tasks.ts`
-- `opencodeAgentsTool` — symlinks `agents.ts`
-- `opencodeGlobalAgents` — symlinks `AGENTS.md`
-- `opencodeDesignAgent` — symlinks `agents/design.md` custom agent
-- `opencodeAgentsLink` — symlinks `~/.agents -> ~/dotfiles/config/agents`
+- `opencodePlugins` — ensures `package.json` and `node_modules`
+  (@opencode-ai/plugin) exist under `~/.config/opencode`
 - `opencodeNodeModules` — symlinks the config-dir node_modules into the repo
   source dir so runtime imports of symlinked sources keep resolving
 
@@ -131,7 +137,7 @@ rebuild. Activations:
 Set per-feature in your component config:
 
 ```nix
-hm-module.opencode.agents-bridge.enable = false;
+hm-module.opencode.agents.enable = false;
 ```
 
 ## Files
