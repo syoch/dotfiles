@@ -127,6 +127,15 @@ async function readMemoryTopics(base: string): Promise<string[]> {
 
 const AgentsBridgePlugin: Plugin = async () => {
   return {
+    "experimental.session.compacting": async (_input, output) => {
+      output.context.push(
+        [
+          "In addition to the required sections, append a final section titled '## Memory Candidates'.",
+          "List there any decisions, policies, or important discoveries from the conversation that are worth keeping beyond this session but may not yet be recorded in long-term memory.",
+          "One terse bullet each; write 'none' if there are none.",
+        ].join(" "),
+      )
+    },
     "experimental.chat.system.transform": async (_input, output) => {
       const [userLines, projectLines, projectMem, globalMem] = await Promise.all([
         readUserCatalog(),

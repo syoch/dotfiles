@@ -1,11 +1,24 @@
 import { tool } from "@opencode-ai/plugin"
-import { mkdir, readFile, readdir, writeFile, rm } from "fs/promises"
+import { mkdir, readFile, readdir, writeFile, rm, stat } from "fs/promises"
 import { join, resolve, dirname } from "path"
 import { existsSync } from "fs"
 
 const HOME = process.env.HOME ?? "~"
 const PROJECT_MEMORY = resolve(join(process.cwd(), ".agent", "memory"))
 const GLOBAL_MEMORY = resolve(join(HOME, ".config", "opencode", "memory"))
+const STALE_DAYS = 7
+
+function ageDaysOf(mtimeMs: number): number {
+  return Math.max(0, Math.floor((Date.now() - mtimeMs) / 86400000))
+}
+
+async function ageDaysOfFile(file: string): Promise<number> {
+  try {
+    return ageDaysOf((await stat(file)).mtimeMs)
+  } catch {
+    return -1
+  }
+}
 
 const TOPIC_RE = /^[a-z0-9][a-z0-9/-]*$/
 type Scope = "project" | "global"
@@ -91,7 +104,18 @@ export const get = tool({
       return JSON.stringify({ status: "error", message: `not found: ${scope}/${topic}` })
     }
     try {
-      return JSON.stringify({ status: "ok", scope, topic, content: await readFile(file, "utf8") })
+      const ageDays = await ageDaysOfFile(file)
+      const stale = ageDays >= STALE_DAYS
+      return JSON.stringify({
+        status: "ok",
+        scope,
+        topic,
+        content: await readFile(file, "utf8"),
+        ageDays,
+        ...(stale
+          ? { note: `This note is ${ageDays} days old - verify it is still accurate before relying on it.` }
+          : {}),
+      })
     } catch (e: any) {
       return JSON.stringify({ status: "error", message: e?.message ?? String(e) })
     }
@@ -136,7 +160,66 @@ export const list = tool({
     acc.sort()
     const p = (prefix as string | undefined)?.trim()
     const topics = p ? acc.filter((t) => t.startsWith(p)) : acc
-    return JSON.stringify({ status: "ok", scope, count: topics.length, topics })
+    const ages: Record<string, number> = {}
+    for (const t of topics) {
+      ages[t] = await ageDaysOfFile(join(base, `${t}.md`))
+    }
+    return JSON.stringify({ status: "ok", scope, count: topics.length, topics, ages })
+  },
+})
+
+export const find = tool({
+  description:
+    "Search memory note contents by keywords (OR match, case-insensitive) at project or global scope. Use BEFORE memory_save to detect existing topics that already cover the same knowledge; if a match covers the new note, append/overwrite it instead of creating a duplicate topic.",
+  args: {
+    scope: tool.schema.string().describe("'project' or 'global'"),
+    keywords: tool.schema
+      .array(tool.schema.string())
+      .describe("Keywords; a topic matches if ANY keyword occurs in its content"),
+  },
+  async execute(args) {
+    const { scope } = args
+    const keywords = (args.keywords ?? [])
+      .map((k) => k.trim().toLowerCase())
+      .filter((k) => k.length > 0)
+    if (keywords.length === 0) {
+      return JSON.stringify({ status: "error", message: "keywords must not be empty" })
+    }
+    let base: string
+    try {
+      base = resolveBase(scope as string)
+    } catch (e: any) {
+      return JSON.stringify({ status: "error", message: e?.message ?? String(e) })
+    }
+    const MAX_MATCHES = 20
+    const MAX_LINES = 5
+    const topics: string[] = []
+    await walkMds(base, base, topics)
+    topics.sort()
+    const matches: { topic: string; ageDays: number; lines: string[] }[] = []
+    let truncated = false
+    for (const t of topics) {
+      if (matches.length >= MAX_MATCHES) {
+        truncated = true
+        break
+      }
+      const file = join(base, `${t}.md`)
+      let content: string
+      try {
+        content = await readFile(file, "utf8")
+      } catch {
+        continue
+      }
+      const hitLines: string[] = []
+      content.split("\n").forEach((ln, i) => {
+        if (hitLines.length >= MAX_LINES) return
+        const low = ln.toLowerCase()
+        if (keywords.some((k) => low.includes(k))) hitLines.push(`L${i + 1}: ${ln.trim()}`)
+      })
+      if (hitLines.length === 0) continue
+      matches.push({ topic: t, ageDays: await ageDaysOfFile(file), lines: hitLines })
+    }
+    return JSON.stringify({ status: "ok", scope, keywords, count: matches.length, truncated, matches })
   },
 })
 

@@ -1,6 +1,7 @@
 ---
-description: 設計相談専用エージェント。要件整理・ロジック/アーキテクチャ設計・トレードオフ分析を行い、実装は行わない。Use when 設計を詰めたい/実装前に相談したい/ロジックの妥当性を検討したい/相談相手としてのみ使いたい時
+description: 設計相談専用エージェント。要件整理・ロジック/アーキテクチャ設計・トレードオフ分析を行い、実装は行わない。Use when 設計を詰めたい/実装前に相談したい/ロジックの妥当性を検討したい/相談相手としてのみ使いたい時。orchestration の統合役としても利用される
 mode: primary
+model: deepseek/deepseek-v4-pro
 permission:
   read: allow
   glob: allow

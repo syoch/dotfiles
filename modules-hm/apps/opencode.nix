@@ -68,6 +68,18 @@ in
         no MANIFEST).
       '';
     };
+
+    orchestration = {
+      enable = mkEnableOption ''
+        orchestration plugin + agents: multi-agent orchestration for
+        brainstorm/discussion/parallel research. Provides the
+        orchestrate_run tool (leader-only, code-gated) that runs participant
+        agents (proposer/critic/design) against persistent per-run sessions
+        (.agents/orchestration/<name>.json) with sequential/parallel modes.
+        Includes leader (subagent, strong model) / proposer / critic agent
+        definitions.
+      '';
+    };
   };
 
   config = mkIf cfg.enable {
@@ -149,9 +161,27 @@ in
     # opencode resolves imports of symlinked plugin/tool sources from their
     # realpath (this repo) — expose the config-dir node_modules there so
     # runtime imports like '@opencode-ai/plugin' keep resolving.
-    home.activation.opencodeNodeModules = mkIf (cfg.tasks.enable || cfg.agents-bridge.enable || cfg.agents-tool.enable || cfg.memory-tool.enable) (
+    home.activation.opencodeNodeModules = mkIf (cfg.tasks.enable || cfg.agents-bridge.enable || cfg.agents-tool.enable || cfg.memory-tool.enable || cfg.orchestration.enable) (
       lib.hm.dag.entryAfter [ "writeBoundary" ] ''
         ln -sfn "$HOME/.config/opencode/node_modules" "${config.home.homeDirectory}/dotfiles/modules-hm/apps/opencode/node_modules"
+      ''
+    );
+
+    # Manage the orchestration plugin from the repo.
+    home.activation.opencodeOrchestration = mkIf cfg.orchestration.enable (
+      lib.hm.dag.entryAfter [ "writeBoundary" ] ''
+        mkdir -p "$HOME/.config/opencode/plugins"
+        ln -sfn "${config.home.homeDirectory}/dotfiles/modules-hm/apps/opencode/orchestration.ts" "$HOME/.config/opencode/plugins/orchestration.ts"
+      ''
+    );
+
+    # Manage the orchestration agents (leader / proposer / critic) from the repo.
+    home.activation.opencodeOrchestrationAgents = mkIf cfg.orchestration.enable (
+      lib.hm.dag.entryAfter [ "writeBoundary" ] ''
+        mkdir -p "$HOME/.config/opencode/agents"
+        for f in leader proposer critic; do
+          ln -sfn "${config.home.homeDirectory}/dotfiles/modules-hm/apps/opencode/agents/$f.md" "$HOME/.config/opencode/agents/$f.md"
+        done
       ''
     );
 
