@@ -5,11 +5,30 @@ import { existsSync } from "fs"
 
 const HOME = process.env.HOME ?? "~"
 const USER_SCOPE = join(HOME, ".agents", "skills")
-const PROJECT_SCOPE = join(process.cwd(), ".agents", "skills")
-const PROJECT_MEMORY = join(process.cwd(), ".agent", "memory")
-const GLOBAL_MEMORY = join(HOME, ".config", "opencode", "memory")
+const GLOBAL_MEMORY = join(HOME, ".agents", "memory")
 const MAX_ENTRIES_PER_SCOPE = 40
 const MAX_MEMORY_TOPICS = 30
+
+// Project paths must be resolved per session, NOT via process.cwd(): plugins
+// run in the opencode server process whose cwd is the server's start dir
+// (e.g. $HOME for the systemd webui unit). Prefer the session's own
+// directory; fall back to the plugin-level project root.
+async function resolveProjectRoot(
+  client: { session: { get(args: any): Promise<any> } },
+  pluginRoot: string,
+  sessionID?: string,
+): Promise<string> {
+  if (sessionID) {
+    try {
+      const s: any = await client.session.get({ path: { id: sessionID } })
+      const d = s?.data?.directory ?? s?.directory
+      if (typeof d === "string" && d.length > 0) return d
+    } catch {
+      // fall through to pluginRoot
+    }
+  }
+  return pluginRoot || process.cwd()
+}
 
 type CatalogEntry = {
   name: string
@@ -95,8 +114,8 @@ async function readUserCatalog(): Promise<string[]> {
   return lines
 }
 
-async function readProjectCatalog(): Promise<string[]> {
-  const entries = await scanSkills(PROJECT_SCOPE)
+async function readProjectCatalog(base: string): Promise<string[]> {
+  const entries = await scanSkills(base)
   return entries.map((e) => formatEntry(e, "  - "))
 }
 
@@ -125,7 +144,9 @@ async function readMemoryTopics(base: string): Promise<string[]> {
   return acc.sort()
 }
 
-const AgentsBridgePlugin: Plugin = async () => {
+const AgentsBridgePlugin: Plugin = async (input) => {
+  const { client } = input
+  const pluginRoot = input.worktree || input.directory
   return {
     "experimental.session.compacting": async (_input, output) => {
       output.context.push(
@@ -136,17 +157,21 @@ const AgentsBridgePlugin: Plugin = async () => {
         ].join(" "),
       )
     },
-    "experimental.chat.system.transform": async (_input, output) => {
+    "experimental.chat.system.transform": async (hookInput, output) => {
+      const projectRoot = await resolveProjectRoot(client, pluginRoot, hookInput?.sessionID)
+      const projectScope = join(projectRoot, ".agents", "skills")
+      const projectMemory = join(projectRoot, ".agents", "memory")
+
       const [userLines, projectLines, projectMem, globalMem] = await Promise.all([
         readUserCatalog(),
-        readProjectCatalog(),
-        readMemoryTopics(PROJECT_MEMORY),
+        readProjectCatalog(projectScope),
+        readMemoryTopics(projectMemory),
         readMemoryTopics(GLOBAL_MEMORY),
       ])
 
       const blocks: string[] = []
       if (projectLines.length > 0) {
-        blocks.push(`[agents-bridge] Project-scope asset catalog (${PROJECT_SCOPE}/):\n${projectLines.join("\n")}`)
+        blocks.push(`[agents-bridge] Project-scope asset catalog (${projectScope}/):\n${projectLines.join("\n")}`)
       }
       if (userLines.length > 0) {
         blocks.push(`[agents-bridge] User-scope asset catalog (${USER_SCOPE}/):\n${userLines.join("\n")}`)

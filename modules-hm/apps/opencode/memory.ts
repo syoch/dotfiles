@@ -4,9 +4,17 @@ import { join, resolve, dirname } from "path"
 import { existsSync } from "fs"
 
 const HOME = process.env.HOME ?? "~"
-const PROJECT_MEMORY = resolve(join(process.cwd(), ".agents", "memory"))
 const GLOBAL_MEMORY = resolve(join(HOME, ".agents", "memory"))
 const STALE_DAYS = 7
+
+// Project root must come from the tool context (per-session worktree), NOT
+// process.cwd(): custom tools run in the opencode server process whose cwd
+// is the server's start dir (e.g. $HOME for the systemd webui unit), which
+// silently collided project scope into ~/.agents/memory.
+function projectMemoryBase(ctx: { directory?: string; worktree?: string }): string {
+  const root = ctx?.worktree || ctx?.directory || process.cwd()
+  return resolve(join(root, ".agents", "memory"))
+}
 
 function ageDaysOf(mtimeMs: number): number {
   return Math.max(0, Math.floor((Date.now() - mtimeMs) / 86400000))
@@ -23,8 +31,8 @@ async function ageDaysOfFile(file: string): Promise<number> {
 const TOPIC_RE = /^[a-z0-9][a-z0-9/-]*$/
 type Scope = "project" | "global"
 
-function resolveBase(scope: string): string {
-  if (scope === "project") return PROJECT_MEMORY
+function resolveBase(scope: string, ctx: { directory?: string; worktree?: string }): string {
+  if (scope === "project") return projectMemoryBase(ctx)
   if (scope === "global") return GLOBAL_MEMORY
   throw new Error(`invalid scope: ${scope} (must be 'project' or 'global')`)
 }
@@ -50,7 +58,7 @@ export const save = tool({
     content: tool.schema.string().describe("Memory content (markdown)"),
     mode: tool.schema.string().describe("'save' | 'overwrite' | 'append'"),
   },
-  async execute(args) {
+  async execute(args, ctx) {
     const { scope, topic, content, mode } = args
     if (mode !== "save" && mode !== "overwrite" && mode !== "append") {
       return JSON.stringify({ status: "error", message: `invalid mode: ${mode} (must be save|overwrite|append)` })
@@ -58,7 +66,7 @@ export const save = tool({
     let base: string
     let file: string
     try {
-      base = resolveBase(scope as string)
+      base = resolveBase(scope as string, ctx)
       ;({ file } = resolveTopicFile(base, topic as string))
       await ensureBase(base)
     } catch (e: any) {
@@ -92,11 +100,11 @@ export const get = tool({
     scope: tool.schema.string().describe("'project' or 'global'"),
     topic: tool.schema.string().describe("Topic name"),
   },
-  async execute(args) {
+  async execute(args, ctx) {
     const { scope, topic } = args
     let file: string
     try {
-      file = resolveTopicFile(resolveBase(scope as string), topic as string).file
+      file = resolveTopicFile(resolveBase(scope as string, ctx), topic as string).file
     } catch (e: any) {
       return JSON.stringify({ status: "error", message: e?.message ?? String(e) })
     }
@@ -147,11 +155,11 @@ export const list = tool({
     scope: tool.schema.string().describe("'project' or 'global'"),
     prefix: tool.schema.string().optional().describe("Topic prefix filter (e.g. 'design')"),
   },
-  async execute(args) {
+  async execute(args, ctx) {
     const { scope, prefix } = args
     let base: string
     try {
-      base = resolveBase(scope as string)
+      base = resolveBase(scope as string, ctx)
     } catch (e: any) {
       return JSON.stringify({ status: "error", message: e?.message ?? String(e) })
     }
@@ -177,7 +185,7 @@ export const find = tool({
       .array(tool.schema.string())
       .describe("Keywords; a topic matches if ANY keyword occurs in its content"),
   },
-  async execute(args) {
+  async execute(args, ctx) {
     const { scope } = args
     const keywords = (args.keywords ?? [])
       .map((k) => k.trim().toLowerCase())
@@ -187,7 +195,7 @@ export const find = tool({
     }
     let base: string
     try {
-      base = resolveBase(scope as string)
+      base = resolveBase(scope as string, ctx)
     } catch (e: any) {
       return JSON.stringify({ status: "error", message: e?.message ?? String(e) })
     }
@@ -230,14 +238,14 @@ export const remove = tool({
     topic: tool.schema.string().describe("Topic name to delete"),
     force: tool.schema.boolean().describe("Must be true to delete"),
   },
-  async execute(args) {
+  async execute(args, ctx) {
     const { scope, topic, force } = args
     if (!force) {
       return JSON.stringify({ status: "error", message: "refusing to delete: pass force=true to remove the memory note" })
     }
     let file: string
     try {
-      file = resolveTopicFile(resolveBase(scope as string), topic as string).file
+      file = resolveTopicFile(resolveBase(scope as string, ctx), topic as string).file
     } catch (e: any) {
       return JSON.stringify({ status: "error", message: e?.message ?? String(e) })
     }

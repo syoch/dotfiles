@@ -121,6 +121,41 @@ catalog (reusable procedures) — memory holds **context/knowledge** notes.
   into `<scope>/.agents/skills/<category>/<name>/SKILL.md` via the `agents_*` tools,
   then verify it is reproducible.
 
+## Playwright MCP + chromium-cdp service
+
+Browser automation runs against a **single shared headless Chromium**, with
+the MCP server itself also always-on:
+
+```
+systemd user services:
+  chromium-cdp.service   Chromium --headless, CDP http://localhost:9222
+  playwright-mcp.service @playwright/mcp --port 8931 --cdp-endpoint :9222
+                         (Requires+After chromium-cdp)
+  opencode.service       (Requires+After both above)
+
+opencode mcp.playwright = { type="remote"; url="http://localhost:8931/mcp" }
+Python scripts          = p.chromium.connect_over_cdp("http://localhost:9222")
+```
+
+- `chromium-cdp.service` — `pkgs.chromium --headless --remote-debugging-port=9222
+  --user-data-dir=~/.cache/chromium-cdp`, `Restart=on-failure`.
+  Headed switch: `systemctl --user set-environment CHROMIUM_HEADED=1 &&
+  systemctl --user restart chromium-cdp` (`0` + restart to go back).
+- `playwright-mcp.service` — store node binary runs cli.js directly (the user
+  service PATH has no node/npx). Its npm dep lives in an isolated prefix
+  `~/.local/share/opencode-mcp` provisioned by the `opencodeMcp` activation
+  script — NOT in `~/.config/opencode/package.json`, because opencode rewrites
+  that file on startup and strips deps it does not manage.
+- Python side attaches with `p.chromium.connect_over_cdp("http://localhost:9222")`
+  and must close only contexts/pages — never the browser.
+  See the `nix/nix-playwright-e2e-setup` skill.
+- Rationale (2026-08): per-run end-to-end latency is on par with spawning a
+  dedicated Chromium (~2.2-2.4s, dominated by page load; note launch() itself
+  benefits from the page-cache warmth the resident browser provides). The
+  accepted win is **no Chromium spawn spikes** — the desktop never hiccups —
+  plus one warm browser, warm MCP tools for every session, shared state, and
+  no libstdc++ dance for Python.
+
 ## Activation
 
 All managed sources (plugins, tools, AGENTS.md) are declared as out-of-store
@@ -131,6 +166,9 @@ are live without a rebuild. Only imperative operations remain in activation:
   (@opencode-ai/plugin) exist under `~/.config/opencode`
 - `opencodeNodeModules` — symlinks the config-dir node_modules into the repo
   source dir so runtime imports of symlinked sources keep resolving
+- `opencodeMcp` — provisions `@playwright/mcp` under
+  `~/.local/share/opencode-mcp` (isolated prefix; opencode strips unknown
+  deps from its own config-dir package.json) for the playwright-mcp service
 
 ## Disable
 

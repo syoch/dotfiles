@@ -81,11 +81,65 @@ in
           # long-term memory custom tools (memory_*) run without per-use prompts
           "memory_*" = "allow";
         };
+
+        # Playwright MCP runs as the always-on playwright-mcp.service
+        # (HTTP transport on :8931) which attaches every session to the
+        # shared chromium-cdp browser. Python scripts share the same browser
+        # by connecting to CDP :9222 directly.
+        mcp.playwright = {
+          type = "remote";
+          url = "http://localhost:8931/mcp";
+          enabled = true;
+        };
       };
     };
 
+    systemd.user.services.chromium-cdp = {
+      Unit.Description = "Chromium CDP Server";
+      Service = {
+        ExecStart =
+          let
+            chromium-headless = "${pkgs.chromium}/bin/chromium --headless --remote-debugging-port=9222 --user-data-dir=%h/.cache/chromium-cdp --no-first-run --disable-gpu --no-sandbox";
+            chromium-headed = "${pkgs.chromium}/bin/chromium --remote-debugging-port=9222 --user-data-dir=%h/.cache/chromium-cdp --no-first-run --no-sandbox";
+          in
+          "${pkgs.bash}/bin/bash -c 'if [ \"$CHROMIUM_HEADED\" = \"1\" ]; then exec ${chromium-headed}; else exec ${chromium-headless}; fi'";
+        Restart = "on-failure";
+        RestartSec = 5;
+      };
+      Install.WantedBy = [ "default.target" ];
+    };
+
+    # Playwright MCP server, always-on with HTTP transport (:8931).
+    # Attaches every browser session to the shared chromium-cdp instance.
+    # Provisioned by home.activation.opencodeMcp (~/.local/share/opencode-mcp);
+    # store node binary is used because the user service PATH lacks node.
+    systemd.user.services.playwright-mcp = {
+      Unit = {
+        Description = "Playwright MCP Server (HTTP transport)";
+        Requires = [ "chromium-cdp.service" ];
+        After = [ "chromium-cdp.service" ];
+      };
+      Service = {
+        ExecStart =
+          "${pkgs.nodejs}/bin/node ${config.home.homeDirectory}/.local/share/opencode-mcp/node_modules/@playwright/mcp/cli.js --port 8931 --cdp-endpoint http://localhost:9222";
+        Restart = "on-failure";
+        RestartSec = 5;
+      };
+      Install.WantedBy = [ "default.target" ];
+    };
+
     systemd.user.services.opencode = {
-      Unit.Description = "OpenCode WebUI";
+      Unit = {
+        Description = "OpenCode WebUI";
+        Requires = [
+          "playwright-mcp.service"
+          "chromium-cdp.service"
+        ];
+        After = [
+          "playwright-mcp.service"
+          "chromium-cdp.service"
+        ];
+      };
       Service.ExecStart = "${pkgs.opencode}/bin/opencode web --hostname 127.0.0.1 --port 12000";
       Install.WantedBy = [ "default.target" ];
     };
@@ -97,37 +151,47 @@ in
     home.file = mkMerge [
       # tasks tool
       (mkIf cfg.tasks.enable {
-        ".config/opencode/tools/tasks.ts".source = config.lib.file.mkOutOfStoreSymlink "${opencodeSrc}/tasks.ts";
+        ".config/opencode/tools/tasks.ts".source =
+          config.lib.file.mkOutOfStoreSymlink "${opencodeSrc}/tasks.ts";
       })
 
       # agents catalog tools + bridge + ~/.agents symlink
       (mkIf cfg.agents.enable {
-        ".config/opencode/tools/agents.ts".source = config.lib.file.mkOutOfStoreSymlink "${opencodeSrc}/agents.ts";
-        ".config/opencode/plugins/agents-bridge.ts".source = config.lib.file.mkOutOfStoreSymlink "${opencodeSrc}/agents-bridge.ts";
+        ".config/opencode/tools/agents.ts".source =
+          config.lib.file.mkOutOfStoreSymlink "${opencodeSrc}/agents.ts";
+        ".config/opencode/plugins/agents-bridge.ts".source =
+          config.lib.file.mkOutOfStoreSymlink "${opencodeSrc}/agents-bridge.ts";
         ".agents".source = config.lib.file.mkOutOfStoreSymlink "${dotfiles}/config/agents";
       })
 
       # memory tool
       (mkIf cfg.memory-tool.enable {
-        ".config/opencode/tools/memory.ts".source = config.lib.file.mkOutOfStoreSymlink "${opencodeSrc}/memory.ts";
+        ".config/opencode/tools/memory.ts".source =
+          config.lib.file.mkOutOfStoreSymlink "${opencodeSrc}/memory.ts";
       })
 
       # global AGENTS.md
       (mkIf cfg.global-agents.enable {
-        ".config/opencode/AGENTS.md".source = config.lib.file.mkOutOfStoreSymlink "${opencodeSrc}/AGENTS.global.md";
+        ".config/opencode/AGENTS.md".source =
+          config.lib.file.mkOutOfStoreSymlink "${opencodeSrc}/AGENTS.global.md";
       })
 
       # design agent
       (mkIf cfg.design-agent.enable {
-        ".config/opencode/agents/design.md".source = config.lib.file.mkOutOfStoreSymlink "${opencodeSrc}/agents/design.md";
+        ".config/opencode/agents/design.md".source =
+          config.lib.file.mkOutOfStoreSymlink "${opencodeSrc}/agents/design.md";
       })
 
       # orchestration plugin + agents
       (mkIf cfg.orchestration.enable {
-        ".config/opencode/plugins/orchestration.ts".source = config.lib.file.mkOutOfStoreSymlink "${opencodeSrc}/orchestration.ts";
-        ".config/opencode/agents/leader.md".source = config.lib.file.mkOutOfStoreSymlink "${opencodeSrc}/agents/leader.md";
-        ".config/opencode/agents/proposer.md".source = config.lib.file.mkOutOfStoreSymlink "${opencodeSrc}/agents/proposer.md";
-        ".config/opencode/agents/critic.md".source = config.lib.file.mkOutOfStoreSymlink "${opencodeSrc}/agents/critic.md";
+        ".config/opencode/plugins/orchestration.ts".source =
+          config.lib.file.mkOutOfStoreSymlink "${opencodeSrc}/orchestration.ts";
+        ".config/opencode/agents/leader.md".source =
+          config.lib.file.mkOutOfStoreSymlink "${opencodeSrc}/agents/leader.md";
+        ".config/opencode/agents/proposer.md".source =
+          config.lib.file.mkOutOfStoreSymlink "${opencodeSrc}/agents/proposer.md";
+        ".config/opencode/agents/critic.md".source =
+          config.lib.file.mkOutOfStoreSymlink "${opencodeSrc}/agents/critic.md";
       })
     ];
 
@@ -137,14 +201,10 @@ in
     home.activation.opencodePlugins = mkIf cfg.agents.enable (
       lib.hm.dag.entryAfter [ "writeBoundary" ] ''
         # Ensure package.json declares @opencode-ai/plugin.
+        # Written via node — no shell heredoc (indented terminators inside
+        # the Nix string silently swallow the rest of the script).
         if [ ! -f "$HOME/.config/opencode/package.json" ]; then
-          cat > "$HOME/.config/opencode/package.json" <<'EOF'
-        {
-          "type": "module",
-          "dependencies": { "@opencode-ai/plugin": "1.14.35" },
-          "devDependencies": { "@types/bun": "latest" }
-        }
-        EOF
+          ${pkgs.nodejs}/bin/node -e 'require("fs").writeFileSync(process.env.HOME + "/.config/opencode/package.json", JSON.stringify({ type: "module", dependencies: { "@opencode-ai/plugin": "1.14.35" }, devDependencies: { "@types/bun": "latest" } }, null, 2) + "\n")'
         else
           # Ensure @opencode-ai/plugin is declared. Use a tiny node
           # script to avoid pulling in jq.
@@ -168,10 +228,30 @@ in
     # opencode resolves imports of symlinked plugin/tool sources from their
     # realpath (this repo) — expose the config-dir node_modules there so
     # runtime imports like '@opencode-ai/plugin' keep resolving.
-    home.activation.opencodeNodeModules = mkIf (cfg.tasks.enable || cfg.agents.enable || cfg.memory-tool.enable || cfg.orchestration.enable) (
-      lib.hm.dag.entryAfter [ "writeBoundary" ] ''
-        ln -sfn "$HOME/.config/opencode/node_modules" "${opencodeSrc}/node_modules"
-      ''
-    );
+    home.activation.opencodeNodeModules =
+      mkIf (cfg.tasks.enable || cfg.agents.enable || cfg.memory-tool.enable || cfg.orchestration.enable)
+        (
+          lib.hm.dag.entryAfter [ "writeBoundary" ] ''
+            ln -sfn "$HOME/.config/opencode/node_modules" "${opencodeSrc}/node_modules"
+          ''
+        );
+
+    # Ensure @playwright/mcp is installed for the playwright-mcp.service.
+    # IMPORTANT: this lives in its own prefix (~/.local/share/opencode-mcp),
+    # NOT in ~/.config/opencode/package.json — opencode rewrites that file on
+    # startup and strips dependencies it does not manage itself.
+    # The package.json is written via node (no shell heredoc: indented
+    # terminators inside the Nix string silently swallow the rest of the
+    # activation script).
+    home.activation.opencodeMcp = lib.hm.dag.entryAfter [ "writeBoundary" ] ''
+      mkdir -p "$HOME/.local/share/opencode-mcp"
+      if [ ! -f "$HOME/.local/share/opencode-mcp/package.json" ]; then
+        ${pkgs.nodejs}/bin/node -e 'require("fs").writeFileSync(process.env.HOME + "/.local/share/opencode-mcp/package.json", JSON.stringify({ type: "module", dependencies: { "@playwright/mcp": "latest" }, devDependencies: {} }, null, 2) + "\n")'
+      fi
+
+      if [ ! -d "$HOME/.local/share/opencode-mcp/node_modules/@playwright/mcp" ]; then
+        ${lib.getExe pkgs.bun} install --cwd "$HOME/.local/share/opencode-mcp" --no-save
+      fi
+    '';
   };
 }

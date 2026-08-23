@@ -5,7 +5,14 @@ import { existsSync } from "fs"
 
 const HOME = process.env.HOME ?? "~"
 const USER_SCOPE = resolve(join(HOME, ".agents", "skills"))
-const PROJECT_SCOPE = resolve(join(process.cwd(), ".agents", "skills"))
+
+// Project scope must come from the tool context (per-session worktree), NOT
+// process.cwd(): custom tools run in the opencode server process whose cwd
+// is the server's start dir (e.g. $HOME for the systemd webui unit).
+function projectScope(ctx: { directory?: string; worktree?: string }): string {
+  const root = ctx?.worktree || ctx?.directory || process.cwd()
+  return resolve(join(root, ".agents", "skills"))
+}
 
 const NAME_RE = /^[a-z0-9]+(-[a-z0-9]+)*$/
 const CAT_RE = /^[a-z0-9]+(-[a-z0-9]+)*$/
@@ -56,9 +63,9 @@ function renderFrontmatter(name: string, description: string, args: string): str
   return out.join("\n")
 }
 
-function resolveBase(category: string): { base: string; category: string } {
+function resolveBase(category: string, ctx: { directory?: string; worktree?: string }): { base: string; category: string } {
   if (category === "project") {
-    return { base: PROJECT_SCOPE, category: "project" }
+    return { base: projectScope(ctx), category: "project" }
   }
   if (!CAT_RE.test(category)) {
     throw new Error(`invalid category: ${category} (must match ${CAT_RE})`)
@@ -136,12 +143,12 @@ export const list = tool({
   args: {
     category: tool.schema.string().optional().describe("Filter by category (e.g. 'nix') or 'project' for project scope"),
   },
-  async execute(args) {
+  async execute(args, ctx) {
     const category = args.category as string | undefined
     let rows: Array<{ category: string; name: string; description: string; args: string }> = []
 
     if (category) {
-      const { base, category: c } = resolveBase(category)
+      const { base, category: c } = resolveBase(category, ctx)
       if (!existsSync(base)) {
         return JSON.stringify({ status: "empty", category, entries: [] })
       }
@@ -176,7 +183,7 @@ export const add = tool({
     args: tool.schema.string().optional().describe("Optional usage arguments, e.g. '<file> <out>'"),
     force: tool.schema.boolean().optional().describe("Overwrite an existing skill if true (default false)"),
   },
-  async execute(args) {
+  async execute(args, ctx) {
     const { category: categoryArg, name, description, body, args: usageArgs, force } = args
     if (!NAME_RE.test(name)) {
       return JSON.stringify({ status: "error", message: `invalid name: ${name} (must match ${NAME_RE})` })
@@ -190,7 +197,7 @@ export const add = tool({
 
     let base: string
     try {
-      base = resolveBase(categoryArg as string).base
+      base = resolveBase(categoryArg as string, ctx).base
     } catch (e: any) {
       return JSON.stringify({ status: "error", message: e?.message ?? String(e) })
     }
@@ -226,11 +233,11 @@ export const update = tool({
     body: tool.schema.string().optional().describe("New markdown body"),
     args: tool.schema.string().optional().describe("New args (frontmatter); empty string clears it"),
   },
-  async execute(args) {
+  async execute(args, ctx) {
     const { category: categoryArg, name, description, body, args: usageArgs } = args
     let base: string
     try {
-      base = resolveBase(categoryArg as string).base
+      base = resolveBase(categoryArg as string, ctx).base
     } catch (e: any) {
       return JSON.stringify({ status: "error", message: e?.message ?? String(e) })
     }
@@ -260,13 +267,13 @@ export const rename = tool({
     newName: tool.schema.string().optional().describe("New skill name"),
     newCategory: tool.schema.string().optional().describe("Target category ('project' or a user-scope category); defaults to current"),
   },
-  async execute(args) {
+  async execute(args, ctx) {
     const { category: categoryArg, name, newName, newCategory } = args
     let srcBase: string
     let dstBase: string
     try {
-      srcBase = resolveBase(categoryArg as string).base
-      dstBase = resolveBase((newCategory as string) ?? (categoryArg as string)).base
+      srcBase = resolveBase(categoryArg as string, ctx).base
+      dstBase = resolveBase((newCategory as string) ?? (categoryArg as string), ctx).base
     } catch (e: any) {
       return JSON.stringify({ status: "error", message: e?.message ?? String(e) })
     }
@@ -304,14 +311,14 @@ export const remove = tool({
     name: tool.schema.string().describe("Skill name to remove"),
     force: tool.schema.boolean().describe("Must be true to delete"),
   },
-  async execute(args) {
+  async execute(args, ctx) {
     const { category: categoryArg, name, force } = args
     if (!force) {
       return JSON.stringify({ status: "error", message: "refusing to delete: pass force=true to remove the skill and its directory" })
     }
     let base: string
     try {
-      base = resolveBase(categoryArg as string).base
+      base = resolveBase(categoryArg as string, ctx).base
     } catch (e: any) {
       return JSON.stringify({ status: "error", message: e?.message ?? String(e) })
     }
@@ -333,11 +340,11 @@ export const show = tool({
     category: tool.schema.string().describe("Category: 'project' or a user-scope category"),
     name: tool.schema.string().describe("Skill name"),
   },
-  async execute(args) {
+  async execute(args, ctx) {
     const { category: categoryArg, name } = args
     let base: string
     try {
-      base = resolveBase(categoryArg as string).base
+      base = resolveBase(categoryArg as string, ctx).base
     } catch (e: any) {
       return JSON.stringify({ status: "error", message: e?.message ?? String(e) })
     }

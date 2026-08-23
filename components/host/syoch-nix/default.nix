@@ -55,7 +55,6 @@
   programs.nix-ld.libraries = with pkgs; [
     stdenv.cc.cc
     openssl
-    openssl_1_1
     gobject-introspection
     nss
     nspr
