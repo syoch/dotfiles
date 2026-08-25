@@ -1,80 +1,64 @@
 import { tool } from "@opencode-ai/plugin"
 import { $, file, randomUUIDv7 } from "bun"
 import { readdir } from "fs/promises"
+import { join } from "path"
+import { existsSync } from "fs"
 
 const TASK_ROOT = "/tmp/tmux-tasks"
-const CHAR_ASPECT_RATIO = 2
-
-type PanelInfo = {
-  id: string
-  top: number
-  left: number
-  width: number
-  height: number
-  pid: number
-}
-
-type SplitWindowOptions = {
-  target: string
-  direction: "h" | "v"
-}
+// Dedicated tmux session for agent tasks: one window per task. The user's
+// own sessions/windows are never touched.
+const OC_TMUX_SESSION = "oc-tasks"
 
 function shellQuote(s: string): string {
   return `'${s.replace(/'/g, "'\\''")}'`
 }
 
-function splitDirection(panel: PanelInfo): "h" | "v" {
-  if (panel.width > panel.height * CHAR_ASPECT_RATIO) return "h"
-  return "v"
-}
-
-async function getPanels(): Promise<PanelInfo[]> {
-  const lines = (await $`tmux list-panes -F "#{pane_id} #{pane_top} #{pane_left} #{pane_width} #{pane_height} #{pane_pid}"`.text()).trim().split("\n")
-  return lines.map(line => {
-    const [id, top, left, width, height, pid] = line.split(" ")
-    return {
-      id: id ?? "-",
-      top: parseInt(top ?? "0"),
-      left: parseInt(left ?? "0"),
-      width: parseInt(width ?? "0"),
-      height: parseInt(height ?? "0"),
-      pid: parseInt(pid ?? "0"),
-    }
-  })
-}
-
-function getPanelToSplit(panels: PanelInfo[]): SplitWindowOptions | null {
-  if (panels.length === 0) return null
-  if (panels.length === 1) {
-    return { target: panels[0].id, direction: splitDirection(panels[0]) }
-  }
-  const taskPanels = panels.filter(p => p.top !== 0 || p.left !== 0)
-  const source = taskPanels.length > 0 ? taskPanels : panels
-  const largest = source.toSorted((a, b) => (b.width * b.height) - (a.width * a.height))[0]
-  return { target: largest.id, direction: splitDirection(largest) }
-}
-
-async function spawnPanel(command: string): Promise<string | null> {
-  const panels = await getPanels()
-  const options = getPanelToSplit(panels)
-  if (!options) {
-    console.error("No panel found to split.")
-    return null
-  }
-  const directionFlag = options.direction === "h" ? "-h" : "-v"
-  const result = await $`tmux split-window -P -F "#{pane_id}" -d ${directionFlag} -t ${options.target} ${command}`.text()
-  const id = result.trim()
-  return id.startsWith("%") ? id : null
-}
-
-async function killPanel(paneId: string): Promise<boolean> {
-  if (!paneId.startsWith("%")) return false
+async function hasOcSession(): Promise<boolean> {
   try {
-    await $`tmux kill-pane -t ${paneId}`.quiet()
+    await $`tmux has-session -t ${OC_TMUX_SESSION}`.quiet()
     return true
   } catch {
     return false
   }
+}
+
+// Launches the command as a new window inside the dedicated oc-tasks
+// session and returns the pane id (%N). Creating a session implicitly
+// creates its first window, hence the two command shapes. Retries once:
+// killing the last task's window tears the session down asynchronously,
+// so has-session can race a subsequent start.
+async function launchWindow(command: string, name: string): Promise<string> {
+  let lastError = ""
+  for (let attempt = 0; attempt < 2; attempt++) {
+    const create = (await hasOcSession())
+      ? $`tmux new-window -d -P -F '#{pane_id}' -t ${OC_TMUX_SESSION} -n ${name} ${command}`
+      : $`tmux new-session -d -P -F '#{pane_id}' -s ${OC_TMUX_SESSION} -n ${name} ${command}`
+    const result = await create.text().catch((e: any) => {
+      lastError = e?.stderr?.toString() ?? e?.message ?? String(e)
+      return ""
+    })
+    const id = result.trim()
+    if (id.startsWith("%")) return id
+    if (!lastError) lastError = `tmux returned ${JSON.stringify(result)}`
+    await Bun.sleep(150)
+  }
+  throw new Error(`tmux window creation failed: ${lastError}`)
+}
+
+function killPanel(paneId: string): Promise<boolean> {
+  if (!paneId.startsWith("%")) return Promise.resolve(false)
+  return $`tmux kill-pane -t ${paneId}`.quiet()
+    .then(() => true)
+    .catch(() => false)
+}
+
+// True when the pane is still alive in the tmux server.
+function paneExists(paneId: string | null): Promise<boolean> {
+  if (!paneId?.startsWith("%")) return Promise.resolve(false)
+  return $`tmux display-message -p -t ${paneId} '#{pane_id}'`
+    .text()
+    .then((out) => out.trim() === paneId)
+    .catch(() => false)
 }
 
 class TaskInfo {
@@ -97,6 +81,7 @@ class TaskInfo {
       file(`${TASK_ROOT}/${this.taskId}.log`).delete().catch(() => {}),
       file(`${TASK_ROOT}/${this.taskId}.sh`).delete().catch(() => {}),
       file(`${TASK_ROOT}/${this.taskId}.json`).delete().catch(() => {}),
+      file(`${TASK_ROOT}/${this.taskId}.exit`).delete().catch(() => {}),
     ])
   }
 
@@ -129,33 +114,44 @@ class TaskInfo {
     const script = `${TASK_ROOT}/${this.taskId}.sh`
     const logfile = `${TASK_ROOT}/${this.taskId}.log`
     const running_marker = `${TASK_ROOT}/${this.taskId}.running`
+    const exitfile = `${TASK_ROOT}/${this.taskId}.exit`
     const nameQuoted = shellQuote(this.name)
 
+    // The command block runs piped through tee so the pipeline completes
+    // only after tee has fully drained the output — the marker is then
+    // removed strictly after every log line hit the file. The exit code
+    // travels via a side file because $? inside the pipeline belongs to tee.
     await Bun.write(script, `#!/bin/bash
-exec > >(tee -a "${logfile}") 2>&1
+{
 echo "=== Task started: ${nameQuoted} at $(date) ==="
 touch "${running_marker}"
 ${this.command}
-status=$?
-echo "=== Task completed: ${nameQuoted} at $(date) (exit=$status) ==="
+s=$?
+echo "=== Task completed: ${nameQuoted} at $(date) (exit=$s) ==="
+printf '%s' "$s" > "${exitfile}"
+} 2>&1 | tee -a "${logfile}"
 rm -f "${running_marker}"
-exit $status
+exit "$(cat "${exitfile}" 2>/dev/null || echo 1)"
 `)
     await $`chmod +x ${script}`.catch(() => {})
 
     const cmd = `bash ${shellQuote(script)}`
-    const paneId = await spawnPanel(cmd)
-    if (!paneId) {
-      await file(script).delete().catch(() => {})
-      throw new Error(`Failed to create tmux pane for task: ${this.taskId} (${this.name})`)
-    }
+    const paneId = await launchWindow(cmd, this.name)
     this.paneId = paneId
     this.startedAt = Date.now()
     await this.saveToFile()
   }
 
   async isRunning(): Promise<boolean> {
+    // Pane-alive covers the startup gap before the wrapper script touches
+    // the marker (a kill issued immediately after start must still see it
+    // as running), and the normal running phase afterwards.
+    if (await this.isPaneAlive()) return true
     return await file(`${TASK_ROOT}/${this.taskId}.running`).exists()
+  }
+
+  private async isPaneAlive(): Promise<boolean> {
+    return await paneExists(this.paneId)
   }
 
   async waitForFinish(timeoutSeconds: number = 60): Promise<boolean> {
@@ -169,8 +165,18 @@ exit $status
     return false
   }
 
-  async status(): Promise<"running" | "completed" | "killed" | "unknown"> {
-    if (await this.isRunning()) return "running"
+  async status(): Promise<"running" | "completed" | "terminated" | "killed" | "unknown"> {
+    const [alive, marker] = await Promise.all([
+      this.isPaneAlive(),
+      file(`${TASK_ROOT}/${this.taskId}.running`).exists(),
+    ])
+    if (alive) return "running"
+    if (marker) {
+      // Stale marker: the window was closed externally while the task ran,
+      // so the wrapper's cleanup lines never executed.
+      await file(`${TASK_ROOT}/${this.taskId}.running`).delete().catch(() => {})
+      return "terminated"
+    }
     if (!await file(`${TASK_ROOT}/${this.taskId}.log`).exists()) return "unknown"
     if (!await file(`${TASK_ROOT}/${this.taskId}.json`).exists()) return "killed"
     return "completed"
@@ -216,7 +222,7 @@ async function cleanupTaskFiles(contextId?: string): Promise<{ removed: string[]
   const removed: string[] = []
   let kept = 0
   for (const fileName of files) {
-    const match = fileName.match(/^(.+)\.(json|log|sh|running)$/)
+    const match = fileName.match(/^(.+)\.(json|log|sh|running|exit)$/)
     if (!match) continue
     const task = await TaskInfo.loadFromFile(match[1])
     if (contextId && task && task.sessionId !== contextId) { kept++; continue }
@@ -228,13 +234,28 @@ async function cleanupTaskFiles(contextId?: string): Promise<{ removed: string[]
 }
 
 export const start = tool({
-  description: "Start a background task in a new tmux pane",
+  description: "Start a background task in a new window of the dedicated oc-tasks tmux session",
   args: {
     name: tool.schema.string().describe("Task name (human-readable identifier)"),
-    command: tool.schema.string().describe("Command to execute"),
+    command: tool.schema
+      .string()
+      .optional()
+      .describe("Command to execute. Omit to run the project service definition .agents/services/<name>.sh"),
   },
   async execute(args, context) {
-    const { name, command } = args
+    const { name } = args
+    let command = args.command
+    if (!command?.trim()) {
+      const root = context.worktree || context.directory || process.cwd()
+      const defPath = join(root, ".agents", "services", `${name}.sh`)
+      if (!existsSync(defPath)) {
+        return JSON.stringify({
+          status: "error",
+          message: `command is required, or provide a service definition at .agents/services/${name}.sh (not found: ${defPath})`,
+        })
+      }
+      command = `bash ${shellQuote(defPath)}`
+    }
     const task = TaskInfo.createTask(context.sessionID, command, name)
     try {
       await task.launch()
