@@ -1,7 +1,7 @@
 ---
 description: 反証・リスク指摘・代替案の検討を担う議論参加者。提案の弱点を炙り出し、堅牢性を高める。Use when 議論・ブレスト・設計検討で案の妥当性を批判的に検証したい時。orchestration の参加者として leader から起動される
 mode: subagent
-model: deepseek/deepseek-v4-flash
+model: opencode-go/deepseek-v4-flash
 permission:
   read: allow
   glob: allow

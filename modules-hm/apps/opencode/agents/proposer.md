@@ -1,7 +1,8 @@
 ---
 description: 発想・提案を担う議論参加者。複数案の生成・推進を担当。Use when 議論・ブレスト・設計検討で新規アイデアや代替案を出したい時。orchestration の参加者として leader から起動される
 mode: subagent
-model: deepseek/deepseek-v4-flash
+model: opencode-go/deepseek-v4-flash
+variant: low
 permission:
   read: allow
   glob: allow

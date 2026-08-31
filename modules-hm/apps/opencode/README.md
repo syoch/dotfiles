@@ -26,7 +26,7 @@ auto-generated from tool-call patterns.
 | User-scope catalog | `config/agents/skills/` -> `~/.agents/skills/` | Tech-stack-categorized reusable assets (`<category>/<skill>/SKILL.md`), symlinked into the home dir. Catalog is derived dynamically from the SKILL.md tree (no MANIFEST). |
 | Agents tools | `agents.ts` (tools) | `agents_categories` / `agents_list` / `agents_add` / `agents_update` / `agents_rename` / `agents_remove` / `agents_show` — manage the `.agents` catalogs by scanning the directory tree and SKILL.md frontmatter. |
 | Memory tools | `memory.ts` (tools) | Durable long-term memory at project (`.agents/memory/`) and global (`~/.agents/memory/`) scope: `memory_save` (save/overwrite/append) / `memory_get` / `memory_list` / `memory_remove`. |
-| Task tool | `tasks.ts` (tools) | tmux-backed background tasks. |
+| Task tool | `tasks.ts` (tools) | Background tasks run as one window per task inside the dedicated `oc-tasks` tmux session (the user's own windows are never touched). Status cross-checks the running marker against pane liveness (externally closed windows report `terminated`). With `command` omitted, `tasks_start` runs the project service definition `.agents/services/<name>.sh`. |
 
 auto-skill / auto-notes were **removed**: repetition-based auto-generation
 produced noisy, unmanaged SKILL.md files (see

@@ -1,7 +1,8 @@
 ---
 description: マルチエージェント議論・調査・設計検討の進行役。タスクの複雑さと規模を判断し、参加者エージェント（proposer / critic / design 等）への依頼を orchestrate_run で実行する。Use when 複数視点の議論、並列調査、トレードオフ分析により高品質な検討が必要な時
 mode: subagent
-model: deepseek/deepseek-v4-pro
+model: opencode-go/deepseek-v4-flash
+variant: high
 permission:
   read: allow
   glob: allow

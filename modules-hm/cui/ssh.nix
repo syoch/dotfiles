@@ -15,7 +15,7 @@ in
   config = mkIf cfg.enable {
     programs.ssh.enable = true;
     programs.ssh.enableDefaultConfig = false;
-    programs.ssh.settings."*" = { };
+    programs.ssh.matchBlocks."*" = { };
     programs.ssh.extraConfig = ''
       Include /home/syoch/.ssh/config.d/*
     '';
