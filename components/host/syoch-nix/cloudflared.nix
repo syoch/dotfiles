@@ -18,11 +18,6 @@
     tunnels."syoch-nix" = {
       credentialsFile = config.sops.secrets."cloudflared-tunnel-cred".path;
       default = "http_status:404";
-      ingress = {
-        "opencode.syoch.org" = "http://127.0.0.1:12000";
-        "code.syoch.org" = "http://127.0.0.1:9101";
-        "procon.syoch.org" = "http://127.0.0.1:10001";
-      };
     };
   };
 }

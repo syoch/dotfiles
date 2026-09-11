@@ -34,6 +34,7 @@
     phpOptions = {
       "max_execution_time" = "7200";
       "max_input_time" = "7200";
+      "opcache.interned_strings_buffer" = "32";
     };
     extraApps = {
       inherit (pkgs.nextcloud34Packages.apps) calendar tasks whiteboard;
@@ -53,6 +54,7 @@
     settings.trusted_domains = [
       config.servers.hosts."nextcloud".fqdn
     ];
+    settings.maintenance_window_start = 18;
     settings.overwriteprotocol = "https";
     https = true;
   };
