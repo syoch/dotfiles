@@ -30,11 +30,11 @@
     after = [ "postgresql-setup-passwords.service" ];
   };
 
-  services.nginx.virtualHosts."portal.syoch.org" = {
-    listenAddresses = [
-      "0.0.0.0"
-      "[::0]"
-    ];
+  servers.hosts."portal" = {
+    ssl = "dns-01";
+    upstream = "http://127.0.0.1:8000";
+  };
+  services.nginx.virtualHosts.${config.servers.hosts."portal".fqdn} = {
     extraConfig = ''
       add_header Strict-Transport-Security "max-age=31536000; includeSubDomains" always;
       add_header X-Frame-Options "DENY" always;
@@ -43,9 +43,5 @@
       add_header Permissions-Policy "interest-cohort=()" always;
       add_header Content-Security-Policy "default-src 'self'; img-src 'self' data:; style-src 'self' 'unsafe-inline'; script-src 'self'" always;
     '';
-    locations."/" = {
-      proxyPass = "http://127.0.0.1:8000";
-      proxyWebsockets = true;
-    };
   };
 }

@@ -1,23 +1,18 @@
-{
+{ config, ... }: {
   services.collabora-online = {
     enable = true;
     port = 12003;
     settings.ssl.enable = false;
+    settings.ssl.termination = true;
     settings.storage.wopi = {
       "@allow" = true;
       host = [
-        "collabora.syoch.org"
+        config.servers.hosts."collabora".fqdn
       ];
     };
   };
-  services.nginx.virtualHosts."collabora.syoch.org" = {
-    listenAddresses = [
-      "0.0.0.0"
-      "[::0]"
-    ];
-    locations."/" = {
-      proxyPass = "http://127.0.0.1:12003";
-      proxyWebsockets = true;
-    };
+  servers.hosts."collabora" = {
+    ssl = "dns-01";
+    upstream = "http://127.0.0.1:12003";
   };
 }

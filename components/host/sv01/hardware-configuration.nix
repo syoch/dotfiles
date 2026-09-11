@@ -25,8 +25,9 @@
     };
 
   fileSystems."/srv/NAS" =
-    { device = "/dev/mapper/Data-NAS";
+    { device = "/dev/mapper/data-nas";
       fsType = "btrfs";
+      options = [ "nofail" ];
     };
 
   swapDevices =

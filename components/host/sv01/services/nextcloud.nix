@@ -13,10 +13,6 @@
     path = "/etc/nixos/nextcloud-env";
   };
 
-  networking.firewall.allowedTCPPorts = [
-    3002
-  ];
-
   environment.systemPackages = [
     pkgs.imagemagick
   ];
@@ -24,7 +20,7 @@
   services.nextcloud = {
     enable = true;
     package = pkgs.nextcloud34;
-    hostName = "nextcloud.syoch.org";
+    hostName = config.servers.hosts."nextcloud".fqdn;
     database.createLocally = true;
     config.dbtype = "pgsql";
     settings.datadirectory = "/srv/NAS/nextcloud";
@@ -40,8 +36,8 @@
       "max_input_time" = "7200";
     };
     extraApps = {
-      inherit (pkgs.nextcloud33Packages.apps) calendar tasks whiteboard;
-      inherit (pkgs.nextcloud33Packages.apps) deck previewgenerator;
+      inherit (pkgs.nextcloud34Packages.apps) calendar tasks whiteboard;
+      inherit (pkgs.nextcloud34Packages.apps) deck previewgenerator;
       ncgantt = pkgs.fetchNextcloudApp {
         url = "https://github.com/xenofex7/nextcloud-gantt/archive/9d186488518a8072837e9ab4318088335a8266b7.tar.gz";
         hash = "sha256-gozACkVIIyEqoOvT7jn1PwTDbTUDhje/Wf1wd0fRLMs=";
@@ -55,11 +51,13 @@
 
     config.adminpassFile = config.sops.secrets."nextcloud-admin-password".path;
     settings.trusted_domains = [
-      "localhost"
-      "10.42.0.1"
-      "nextcloud.syoch.org"
+      config.servers.hosts."nextcloud".fqdn
     ];
+    settings.overwriteprotocol = "https";
+    https = true;
   };
+
+  servers.hosts."nextcloud".ssl = "dns-01";
 
   systemd.services.nextcloud-custom-config = {
     path = [ config.services.nextcloud.occ ];
@@ -78,7 +76,9 @@
       nextcloud-occ app:enable tasks
       nextcloud-occ app:enable whiteboard
       nextcloud-occ app:enable files_external
-      nextcloud-occ config:app:set whiteboard collabBackendUrl --value="https://whiteboard.syoch.org"
+      nextcloud-occ config:app:set whiteboard collabBackendUrl --value="https://${
+        config.servers.hosts."nextcloud".fqdn
+      }/whiteboard/"
       nextcloud-occ config:app:set whiteboard jwt_secret_key --value="$NEXTCLOUD_WHITEBOARD_JWT_SECRET_KEY"
 
     '';
@@ -86,7 +86,7 @@
     wantedBy = [ "multi-user.target" ];
   };
 
-  services.nginx.virtualHosts."${config.services.nextcloud.hostName}" = {
+  services.nginx.virtualHosts."${config.servers.hosts."nextcloud".fqdn}" = {
     extraConfig = ''
       # Large file transfer support - timeouts for uploads
       client_body_timeout 3600s;
@@ -95,22 +95,17 @@
       proxy_connect_timeout 3600s;
       proxy_send_timeout 3600s;
       proxy_read_timeout 3600s;
+
     '';
+    locations."/whiteboard/" = {
+      proxyPass = "http://localhost:3002/";
+      proxyWebsockets = true;
+    };
   };
 
   services.nextcloud-whiteboard-server = {
     enable = true;
-    settings.NEXTCLOUD_URL = "https://nextcloud.syoch.org";
+    settings.NEXTCLOUD_URL = "http://${config.servers.hosts."nextcloud".fqdn}";
     secrets = [ config.sops.secrets."nextcloud-whiteboard".path ];
-  };
-  services.nginx.virtualHosts."wb-nextcloud.syoch.org" = {
-    listenAddresses = [
-      "0.0.0.0"
-      "[::0]"
-    ];
-    locations."/" = {
-      proxyPass = "http://127.0.0.1:3002";
-      proxyWebsockets = true;
-    };
   };
 }

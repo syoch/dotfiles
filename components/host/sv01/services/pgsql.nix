@@ -11,10 +11,6 @@
     owner = "postgres";
     path = "/etc/nixos/portal-db-password";
   };
-  sops.secrets."xwiki-db-password" = {
-    owner = "postgres";
-    path = "/etc/nixos/xwiki-db-password";
-  };
   systemd.services.postgresql-setup-passwords = {
     description = "Set PostgreSQL passwords from SOPS secrets";
     path = [ pkgs.postgresql ];
@@ -33,9 +29,7 @@
 
     script = ''
       set -e
-      xwiki_password="$(cat ${config.sops.secrets."xwiki-db-password".path})"
       portal_password="$(cat ${config.sops.secrets."portal-db-password".path})"
-      psql -v ON_ERROR_STOP=1 -c "ALTER USER \"xwiki\" WITH PASSWORD '$xwiki_password';"
       psql -v ON_ERROR_STOP=1 -c "ALTER USER \"syoch-portal\" WITH PASSWORD '$portal_password';"
     '';
   };

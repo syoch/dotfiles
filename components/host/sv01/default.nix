@@ -11,7 +11,6 @@
     ./services/nextcloud.nix
     ./services/pgsql.nix
     ./services/portal.nix
-    ./services/xwiki.nix
   ];
 
   # Config
@@ -26,16 +25,13 @@
 
   programs.tmux.enable = true;
 
-  networking.hostName = "syoch-sv01";
+  networking.hostName = "sv01";
+  servers.domain = "syoch.org";
+  networking.domain = config.servers.domain;
   networking.networkmanager.enable = true;
 
   services.cloudflared.enable = true;
   fileSystems."/boot/efi".options = [ "nofail" ];
-
-  services.nextcloud.settings.trusted_domains = [
-    "localhost"
-    "10.42.0.1"
-  ];
 
   users.groups.nas-agent = { };
   users.users.syoch.extraGroups = [ "nas-agent" ];
@@ -52,6 +48,33 @@
     downstream.dhcpRangeEnd = "10.42.200.0";
     extraForwardableInterfaces = [ "wg-vpn" ];
   };
+
+  services.dnsmasq = {
+    enable = true;
+    settings.bind-interfaces = true;
+    settings.interface = "lo";
+    servers = [
+      "/${config.servers.domain}/10.42.0.1"
+      "127.0.0.1#54"
+    ];
+  };
+  networking.hosts = {
+    "10.42.0.1" = [
+      config.servers.hosts."nextcloud".fqdn
+      config.servers.hosts."collabora".fqdn
+      config.servers.hosts."portal".fqdn
+      "db.${config.servers.domain}"
+    ];
+  };
+
+  sops.secrets."acme-env" = {
+    owner = "root";
+    path = "/etc/nixos/acme.env";
+  };
+  security.acme.acceptTerms = true;
+  security.acme.defaults.email = "syoch64@gmail.com";
+  security.acme.defaults.dnsProvider = "cloudflare";
+  security.acme.defaults.environmentFile = config.sops.secrets."acme-env".path;
 
   os-mod.smb-server = {
     enable = true;

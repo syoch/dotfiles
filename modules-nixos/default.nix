@@ -13,5 +13,6 @@
     ./nfs-client.nix
     ./nfs-server.nix
     ./smb-server.nix
+    ./servers.nix
   ];
 }
