@@ -14,7 +14,10 @@ in
 
   config = mkIf cfg.enable {
     services.tailscale.enable = true;
-    services.tailscale.extraSetFlags = [ "--accept-dns=false" ];
+    services.tailscale.extraSetFlags = [
+      "--accept-dns=false"
+      "--accept-routes=false"
+    ];
     networking.firewall = {
       trustedInterfaces = [ "tailscale0" ];
       allowedUDPPorts = [ config.services.tailscale.port ];

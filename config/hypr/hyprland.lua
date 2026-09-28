@@ -1,23 +1,20 @@
 hl.monitor({
   output = "desc:AU Optronics 0xB78F",
   mode = "1920x1080@60",
-  position = "3840x0",
+  position = "1920x0",
   scale = 1.0,
-  reserved_area = 0
 });
 hl.monitor({
   output = "desc:BOE Display demoset-1",
   mode = "1920x1080@60",
-  position = "1920x1080",
+  position = "0x1080",
   scale = 1.0,
-  reserved_area = 0
 });
 hl.monitor({
   output = "desc:Acer Technologies SB240Y 0x1040716F",
-  mode = "1920x1080@75",
-  position = "1920x0",
+  mode = "1920x1080@60",
+  position = "0x0",
   scale = 1.0,
-  reserved_area = 0
 });
 
 hl.env("MOZ_ENABLE_WAYLAND", "1")
@@ -45,8 +42,6 @@ hl.config({
     },
 
     resize_on_border = false,
-
-    -- layout = "dwindle",
   },
   decoration = {
     rounding = 8,
@@ -132,6 +127,12 @@ hl.window_rule({
   match = { class = "^(firefox|wlfreerdp|Qemu-kvm|scrcpy)$" },
   float = true,
 })
+hl.window_rule({
+  name   = " (./* center, float)",
+  match  = { title = "^(./.*|build/.*)$" },
+  float  = true,
+  center = true
+});
 hl.window_rule({
   name  = "Float (by title)",
   match = { title = "^(ファイル操作の進捗|フォルダーを開く|ファイルを開く|名前を付けて保存|パスワードを作成|.* の名前を変更)$" },

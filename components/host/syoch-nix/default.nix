@@ -10,6 +10,7 @@
     ./wifi.nix
     ./vm-lab.nix
     ./cloudflared.nix
+    ./portal-device-agent.nix
   ];
 
   nixpkgs.config.allowUnfree = true;
@@ -37,7 +38,8 @@
 
   virtualisation.docker.enable = true;
 
-  networking.hostName = "syoch-nix";
+  networking.hostName = "laptop";
+  servers.domain = "syoch.org";
   networking.networkmanager.enable = true;
   boot.binfmt.emulatedSystems = [ "aarch64-linux" ];
 
@@ -46,6 +48,38 @@
   ];
 
   services.cloudflared.enable = true;
+
+  # Portal device agent: one generic agent per device. It exposes the OpenCode
+  # feedback operations (via portal-opencode-tool) plus any local operations.
+  services.portal-device-agent = {
+    enable = true;
+    bootstrapTokenFile = config.sops.secrets."portal-opencode-bridge-token".path;
+    extraPath = [ pkgs.hyprland ];
+    deviceId = "syoch-laptop";
+    extraOperations = [
+      {
+        id = "sys.dpms_toggle";
+        name = "Toggle DPMS";
+        group = "system";
+        description = "Toggle monitor DPMS power (Hyprland)";
+        shell = true;
+        timeout_seconds = 10;
+        # Discover the Hyprland instance signature from the user runtime dir.
+        command = ''
+          export HYPRLAND_INSTANCE_SIGNATURE="''${HYPRLAND_INSTANCE_SIGNATURE:-$(basename "$(ls -d "''${XDG_RUNTIME_DIR:-/run/user/$(id -u)}"/hypr/*/ 2>/dev/null | head -n1)")}"
+          exec hyprctl dispatch dpms toggle
+        '';
+        params_schema = {
+          type = "object";
+          properties = { };
+        };
+        ui_hint = {
+          kind = "button";
+          label = "Toggle DPMS";
+        };
+      }
+    ];
+  };
 
   nixpkgs.config.permittedInsecurePackages = [
     "openssl-1.1.1w"
@@ -132,7 +166,7 @@
     settings.interface = "lo";
     servers = [
       "/nnctrobo.internal/127.0.0.53#5053"
-      "/syoch.org/10.42.0.1"
+      # "/syoch.org/10.42.0.1"
       "127.0.0.1#54"
     ];
   };
@@ -150,8 +184,61 @@
       "smb.nnctrobo.internal"
       "luminary.nnctrobo.internal"
     ];
+    "10.42.0.1" = [
+      "sv01.syoch.org"
+      "files.pri.syoch.org"
+    ];
+    "127.0.0.1" = [
+      "z-procon-main.syoch.org"
+      "opencode.syoch.org"
+      "code.syoch.org"
+    ];
   };
 
+  services.nginx.enable = true;
+  services.nginx.clientMaxBodySize = "1G";
+  services.nginx.recommendedProxySettings = true;
+  services.nginx.recommendedTlsSettings = true;
+  services.nginx.appendHttpConfig = ''
+    log_format main escape=json '{'
+        '"time":"$time_iso8601",'                    # 日時（ISO8601形式）
+        '"client_ip":"$remote_addr",'                # クライアントIP
+        '"forwarded_for":"$http_x_forwarded_for",'    # X-Forwarded-Forヘッダ
+        '"host":"$http_host",'                       # Hostヘッダ
+        '"method":"$request_method",'                # HTTPメソッド（GET/POSTなど）
+        '"uri":"$request_uri",'                      # リクエストURI
+        '"status":$status,'                          # ステータスコード
+        '"body_bytes":$body_bytes_sent,'             # 送信バイト数
+        '"referer":"$http_referer",'                 # Refererヘッダ
+        '"user_agent":"$http_user_agent",'           # User-Agentヘッダ
+        '"request_time":$request_time,'              # NGINX全体の処理時間
+        '"upstream_time":"$upstream_response_time",'  # アプリ側の処理時間
+        '"request_id":"$request_id"'                 # リクエスト一意ID
+    '}';
+    access_log /var/log/nginx/access.log main;
+
+  '';
+
+  sops.secrets."acme-env" = {
+    owner = "root";
+    path = "/etc/nixos/acme.env";
+  };
+  security.acme.acceptTerms = true;
+  security.acme.defaults.email = "syoch64@gmail.com";
+  security.acme.defaults.dnsProvider = "cloudflare";
+  security.acme.defaults.environmentFile = config.sops.secrets."acme-env".path;
+  servers.hosts.code = {
+    ssl = "dns-01";
+    upstream = "http://localhost:9101";
+  };
+  servers.hosts.opencode = {
+    ssl = "dns-01";
+    upstream = "http://localhost:12000";
+  };
+  servers.hosts."z-procon-main" = {
+    ssl = "dns-01";
+    upstream = "http://localhost:10002";
+  };
   environment.systemPackages = with pkgs; [
     wget
     jq
@@ -176,5 +263,6 @@
     wshowkeys
     tetrio-desktop
     techmino
+    ntfs3g
   ];
 }

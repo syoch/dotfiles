@@ -18,7 +18,7 @@
     requires = [ "postgresql.service" ];
     after = [ "postgresql.service" ];
     wantedBy = [ "multi-user.target" ];
-    before = [ "syoch-portal.service" ];
+    before = [ "portal.service" ];
 
     serviceConfig = {
       User = "postgres";

@@ -1,5 +1,15 @@
 { config, ... }:
 {
+  # The OS user/group and PostgreSQL db/role intentionally keep the historical
+  # "syoch-portal" names (no data migration); only the NixOS option/unit names
+  # follow the new "portal" naming from the infrastructure module.
+  users.users.syoch-portal = {
+    isSystemUser = true;
+    group = "syoch-portal";
+    description = "Android Device Provisioning Portal user";
+  };
+  users.groups.syoch-portal = { };
+
   systemd.tmpfiles.rules = [
     "d /srv/syoch-portal 0700 syoch-portal syoch-portal - -"
   ];
@@ -18,14 +28,14 @@
   ];
   services.postgresql.authentication = "host syoch-portal syoch-portal 127.0.0.1/32 scram-sha-256";
 
-  services.syoch-portal = {
+  services.portal = {
     enable = true;
     configFile = config.sops.secrets."portal-config".path;
 
     user = "syoch-portal";
     group = "syoch-portal";
   };
-  systemd.services.syoch-portal = {
+  systemd.services.portal = {
     requires = [ "postgresql-setup-passwords.service" ];
     after = [ "postgresql-setup-passwords.service" ];
   };
@@ -41,7 +51,6 @@
       add_header X-Content-Type-Options "nosniff" always;
       add_header Referrer-Policy "no-referrer" always;
       add_header Permissions-Policy "interest-cohort=()" always;
-      add_header Content-Security-Policy "default-src 'self'; img-src 'self' data:; style-src 'self' 'unsafe-inline'; script-src 'self'" always;
     '';
   };
 }

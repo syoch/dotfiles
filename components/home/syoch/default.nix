@@ -37,20 +37,25 @@
   hm-module.gpg-agent.enable = true;
   nix.package = pkgs.nix;
   nix.settings.allow-import-from-derivation = true;
-  home.packages = with pkgs; [
-    nwg-displays
-    nwg-look
-    vlc
+  nix.extraOptions = ''
+    !include access-tokens.conf
+  '';
 
-    ghidra
-    gimp
-    pavucontrol
+  home.packages = [
+    pkgs.nwg-displays
+    pkgs.nwg-look
+    pkgs.vlc
 
-    p7zip
-    nixd
-    libreoffice
-    imhex
-    github-cli
+    pkgs.ghidra
+    pkgs.pkgs.gimp
+    pkgs.pavucontrol
+
+    pkgs.p7zip
+    pkgs.nixd
+    pkgs.libreoffice
+    pkgs.imhex
+    pkgs.github-cli
+    pkgs.nix-auth
   ];
   hm-module.opencode.enable = true;
   hm-module.opencode.tasks.enable = true;
