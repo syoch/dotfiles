@@ -1,0 +1,81 @@
+#!/usr/bin/env bash
+# droid-build: Build a nix-on-droid activation package on desktop (x86_64 → aarch64)
+# Output: result-droid symlink → /nix/store/<activation-package>
+#
+# Configs:
+#   initial  - components/droid/initial/ (sshd only, ~450 MiB, for first-time bootstrap)
+#   p30t     - components/droid/p30t/    (full config, ~3.6 GiB, after sshd is up)
+#
+# Usage:
+#   ./scripts/droid-build                       # Build default (p30t) config
+#   ./scripts/droid-build initial               # Build initial (sshd-only) config
+#   ./scripts/droid-build p30t --serve          # Build + start HTTP server
+set -euo pipefail
+
+cd "$(dirname "$0")/.."  # repo root
+
+CONFIG="${1:-p30t}"
+shift 2>/dev/null || true
+
+case "$CONFIG" in
+  initial)
+    RESULT="result-droid-initial"
+    ATTR="initial"
+    DESC="sshd-only initial config"
+    ;;
+  p30t|default)
+    RESULT="result-droid"
+    ATTR="default"
+    DESC="full p30t config"
+    ;;
+  *)
+    echo "[droid-build] Unknown config: $CONFIG" >&2
+    echo "[droid-build] Use 'initial' or 'p30t'" >&2
+    exit 1
+    ;;
+esac
+
+SUBSTITUTERS="https://nix-on-droid.cachix.org https://cache.nixos.org"
+NOD_PUBLIC="nix-on-droid.cachix.org-1:56snoMJTXmDRC1Ei24CmKoUqvHJ9XCp+nidK7qkMQrU="
+NIXOS_PUBLIC="cache.nixos.org-1:6NCHdD59X431o0gWypbMrAURkbJ16ZPMQFGspcDShjY="
+
+echo "[droid-build] Building $DESC ($ATTR)..."
+nix build \
+  --system aarch64-linux \
+  --impure \
+  --option substituters "$SUBSTITUTERS" \
+  --option trusted-public-keys "$NOD_PUBLIC $NIXOS_PUBLIC" \
+  ".#nixOnDroidConfigurations.$ATTR.activationPackage" \
+  -o "$RESULT"
+
+ACTIVATION=$(readlink -f "$RESULT")
+echo "[droid-build] Built: $ACTIVATION"
+
+CLOSURE_PATHS=$(nix-store -qR "$ACTIVATION")
+CLOSURE_COUNT=$(echo "$CLOSURE_PATHS" | wc -l)
+CLOSURE_SIZE=$(nix-store -q --size $(echo "$CLOSURE_PATHS" | tr '\n' ' ') | awk '{sum+=$1} END {printf "%.1f", sum/1024/1024}')
+echo "[droid-build] Closure: $CLOSURE_COUNT paths, ${CLOSURE_SIZE} MiB"
+
+if [[ "${1:-}" == "--serve" ]]; then
+  EXEC_DIR=$(mktemp -d)
+  echo "[droid-build] Exporting closure to $EXEC_DIR/closure.nar..."
+  nix-store --export $CLOSURE_PATHS > "$EXEC_DIR/closure.nar"
+  NAR_SIZE=$(du -h "$EXEC_DIR/closure.nar" | cut -f1)
+  echo "[droid-build] Nar: $NAR_SIZE"
+
+  echo "$ACTIVATION" > "$EXEC_DIR/activation-path"
+  echo "$ATTR" > "$EXEC_DIR/config-name"
+
+  DESKTOP_IP=$(hostname -I | awk '{print $1}')
+  echo "[droid-build] Serving on http://$DESKTOP_IP:8765/"
+  echo "[droid-build] Phone commands:"
+  echo "  wget http://$DESKTOP_IP:8765/closure.nar -O ~/droid-closure.nar"
+  echo "  wget http://$DESKTOP_IP:8765/activation-path -O ~/droid-activation-path"
+  echo "  wget http://$DESKTOP_IP:8765/config-name -O ~/droid-config-name"
+  echo "  nix-store --import < ~/droid-closure.nar"
+  echo "  \$(cat ~/droid-activation-path)/activate"
+  echo "[droid-build] Press Ctrl+C to stop."
+
+  cd "$EXEC_DIR"
+  python3 -m http.server 8765 --bind 0.0.0.0
+fi

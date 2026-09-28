@@ -5,3 +5,7 @@ result
 .antigravitycli
 dotfiles.tgz
 modules-hm/apps/opencode/node_modules
+# nix build outputs
+result-droid
+result-droid-*
+.droid-*

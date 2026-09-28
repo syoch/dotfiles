@@ -54,3 +54,36 @@ droid-sync-dotfiles-adb:
 	adb push dotfiles.tgz /data/local/tmp/dotfiles.tgz
 	adb shell su -c cp /data/local/tmp/dotfiles.tgz /data/data/com.termux.nix/files/home/dotfiles.tgz
 	adb shell su -c chown 10007:10007 /data/data/com.termux.nix/files/home/dotfiles.tgz
+
+# --- Nix-on-Droid deployment (desktop-build + push, no on-device evaluation) ---
+
+# Initial bootstrap: build sshd-only config (~450 MiB)
+droid-build-initial:
+	scripts/droid-build initial
+
+# Full p30t config (~3.6 GiB)
+droid-build:
+	scripts/droid-build p30t
+
+# Build + serve via HTTP (phone pulls over WiFi)
+droid-build-initial-serve:
+	scripts/droid-build initial --serve
+
+droid-build-serve:
+	scripts/droid-build p30t --serve
+
+# Push nar to /sdcard via adb (non-root path, works without network)
+droid-serve-initial:
+	scripts/droid-serve initial
+
+droid-serve:
+	scripts/droid-serve p30t
+
+# Push phone-side scripts via adb (uses /sdcard, non-root)
+droid-push-scripts:
+	adb push scripts/droid-activate /sdcard/Download/droid-activate
+	adb push scripts/update-nix-on-droid-prebuilt /sdcard/Download/update-nix-on-droid-prebuilt
+	adb shell cp /sdcard/Download/droid-activate /data/data/com.termux.nix/files/home/droid-activate
+	adb shell cp /sdcard/Download/update-nix-on-droid-prebuilt /data/data/com.termux.nix/files/home/update-nix-on-droid-prebuilt
+	adb shell chown 10007:10007 /data/data/com.termux.nix/files/home/droid-activate
+	adb shell chown 10007:10007 /data/data/com.termux.nix/files/home/update-nix-on-droid-prebuilt

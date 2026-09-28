@@ -1,0 +1,79 @@
+#!/usr/bin/env bash
+# droid-serve: Export closure as nar and push to /sdcard via adb (non-root)
+# For initial setup when phone has no network reach to desktop.
+#
+# Usage:
+#   ./scripts/droid-serve                       # Push current p30t config
+#   ./scripts/droid-serve initial              # Push initial (sshd-only) config
+#   ./scripts/droid-serve p30t --http          # Start HTTP server
+set -euo pipefail
+
+cd "$(dirname "$0")/.."
+
+CONFIG="${1:-p30t}"
+shift 2>/dev/null || true
+
+case "$CONFIG" in
+  initial)
+    RESULT="result-droid-initial"
+    CONFIG_FILE="droid-config-initial"
+    ;;
+  p30t|default)
+    RESULT="result-droid"
+    CONFIG_FILE="droid-config-p30t"
+    ;;
+  *)
+    echo "[droid-serve] Unknown config: $CONFIG" >&2
+    exit 1
+    ;;
+esac
+
+if [[ ! -L "$RESULT" ]] && [[ ! -d "$RESULT" ]]; then
+  echo "[droid-serve] $RESULT not found. Run droid-build $CONFIG first." >&2
+  exit 1
+fi
+
+ACTIVATION=$(readlink -f "$RESULT")
+CLOSURE_PATHS=$(nix-store -qR "$ACTIVATION")
+EXPORT_DIR=$(mktemp -d)
+trap "rm -rf $EXPORT_DIR" EXIT
+
+echo "[droid-serve] Exporting closure ($CONFIG)..."
+nix-store --export $CLOSURE_PATHS > "$EXPORT_DIR/closure.nar"
+NAR_SIZE=$(du -h "$EXPORT_DIR/closure.nar" | cut -f1)
+echo "[droid-serve] Nar: $NAR_SIZE"
+
+echo "$ACTIVATION" > "$EXPORT_DIR/activation-path"
+echo "$CONFIG" > "$EXPORT_DIR/config-name"
+
+if [[ "${1:-}" == "--http" ]]; then
+  DESKTOP_IP=$(hostname -I | awk '{print $1}')
+  echo "[droid-serve] Serving on http://$DESKTOP_IP:8765/"
+  echo "[droid-serve] Phone: wget http://$DESKTOP_IP:8765/closure.nar"
+  cd "$EXPORT_DIR"
+  python3 -m http.server 8765 --bind 0.0.0.0
+  exit 0
+fi
+
+# ADB push to /sdcard/Download (non-root path, world-readable)
+if ! command -v adb >/dev/null; then
+  echo "[droid-serve] adb not found. Use --http instead." >&2
+  exit 1
+fi
+
+if ! adb get-state >/dev/null 2>&1; then
+  echo "[droid-serve] No adb device. Use --http instead." >&2
+  exit 1
+fi
+
+echo "[droid-serve] Pushing to /sdcard/Download/ (non-root)..."
+adb push "$EXPORT_DIR/closure.nar" /sdcard/Download/droid-closure.nar
+adb push "$EXPORT_DIR/activation-path" /sdcard/Download/droid-activation-path
+adb push "$EXPORT_DIR/config-name" /sdcard/Download/droid-config-name
+echo "[droid-serve] Done."
+echo "[droid-serve] Activation: $ACTIVATION"
+echo "[droid-serve] Config: $CONFIG"
+echo "[droid-serve] Phone commands:"
+echo "  cp /sdcard/Download/droid-{closure.nar,activation-path,config-name} ~/"
+echo "  nix-store --import < ~/droid-closure.nar"
+echo "  \$(cat ~/droid-activation-path)/activate"

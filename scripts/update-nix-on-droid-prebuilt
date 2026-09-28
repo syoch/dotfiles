@@ -1,0 +1,33 @@
+#!/usr/bin/env bash
+# update-nix-on-droid-prebuilt: Apply a pre-built closure pushed from desktop.
+# No nixpkgs evaluation happens here - just import and activate.
+#
+# Workflow:
+#   1. Desktop: ./scripts/droid-serve [initial|p30t]   (pushes nar to /sdcard/Download/)
+#   2. Phone: ~/update-nix-on-droid-prebuilt           (this script)
+set -euo pipefail
+
+cd "$HOME"
+
+NAR_SRC="/sdcard/Download/droid-closure.nar"
+ACT_PATH_SRC="/sdcard/Download/droid-activation-path"
+CONFIG_SRC="/sdcard/Download/droid-config-name"
+
+if [[ ! -f "$NAR_SRC" ]]; then
+  echo "[update-prebuilt] No nar in /sdcard/Download/" >&2
+  echo "[update-prebuilt] Run ./scripts/droid-serve on desktop first." >&2
+  exit 1
+fi
+
+if [[ ! -f "$ACT_PATH_SRC" ]]; then
+  echo "[update-prebuilt] No activation-path in /sdcard/Download/" >&2
+  exit 1
+fi
+
+echo "[update-prebuilt] Copying files to home..."
+cp "$NAR_SRC" ~/droid-closure.nar
+cp "$ACT_PATH_SRC" ~/droid-activation-path
+[[ -f "$CONFIG_SRC" ]] && cp "$CONFIG_SRC" ~/droid-config-name
+
+echo "[update-prebuilt] Running ~/droid-activate..."
+exec ~/droid-activate

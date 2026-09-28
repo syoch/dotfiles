@@ -1,0 +1,48 @@
+#!/usr/bin/env bash
+# droid-activate: Phone-side activation script.
+# Imports a pre-built nar closure and runs the activation script.
+# No nixpkgs evaluation happens here.
+#
+# Usage:
+#   ~/droid-activate              # Activate current pending config
+#   NAR_FILE=droid-closure.nar ~/droid-activate
+set -euo pipefail
+
+cd "$HOME"
+
+NAR_FILE="${NAR_FILE:-droid-closure.nar}"
+ACTIVATION_PATH_FILE="droid-activation-path"
+CONFIG_NAME_FILE="droid-config-name"
+
+if [[ ! -f "$NAR_FILE" ]]; then
+  echo "[droid-activate] No nar found: $NAR_FILE" >&2
+  exit 1
+fi
+
+if [[ ! -f "$ACTIVATION_PATH_FILE" ]]; then
+  echo "[droid-activate] No activation path file: $ACTIVATION_PATH_FILE" >&2
+  exit 1
+fi
+
+ACTIVATION_PATH=$(cat "$ACTIVATION_PATH_FILE")
+CONFIG_NAME=$(cat "$CONFIG_NAME_FILE" 2>/dev/null || echo "unknown")
+
+if [[ ! -d "$ACTIVATION_PATH" ]]; then
+  echo "[droid-activate] Activation path not in store: $ACTIVATION_PATH" >&2
+  echo "[droid-activate] Import $NAR_FILE first." >&2
+  exit 1
+fi
+
+echo "[droid-activate] Config: $CONFIG_NAME"
+echo "[droid-activate] Importing $NAR_FILE..."
+nix-store --import < "$NAR_FILE"
+rm -f "$NAR_FILE"
+
+ACTIVATE="$ACTIVATION_PATH/activate"
+if [[ ! -x "$ACTIVATE" ]]; then
+  echo "[droid-activate] Activation script not found: $ACTIVATE" >&2
+  exit 1
+fi
+
+echo "[droid-activate] Activating: $ACTIVATE"
+exec "$ACTIVATE"

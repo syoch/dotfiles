@@ -1,0 +1,29 @@
+#!/usr/bin/env bash
+# droid-nar-export: Export closure as a single nar file.
+# Works around the nix-store --export bug with paths containing newlines
+# (e.g., nix-on-droid's fakeProcStat derivation with embedded \n).
+set -euo pipefail
+
+ACTIVATION="${1:?usage: droid-nar-export <activation-path> <output.nar>}"
+OUTPUT="${2:?usage: droid-nar-export <activation-path> <output.nar>}"
+
+echo "[droid-nar-export] Resolving closure for $ACTIVATION..."
+mapfile -t PATHS < <(nix-store -qR "$ACTIVATION")
+COUNT=${#PATHS[@]}
+echo "[droid-nar-export] $COUNT paths"
+
+echo "[droid-nar-export] Concatenating individual nars..."
+: > "$OUTPUT"
+for i in "${!PATHS[@]}"; do
+  p="${PATHS[$i]}"
+  nix-store --export "$p" >> "$OUTPUT" 2>/dev/null || {
+    echo "[droid-nar-export] Failed: $p" >&2
+    exit 1
+  }
+  if (( (i + 1) % 50 == 0 )); then
+    echo "[droid-nar-export]   $((i + 1))/$COUNT"
+  fi
+done
+
+SIZE=$(du -h "$OUTPUT" | cut -f1)
+echo "[droid-nar-export] Done: $OUTPUT ($SIZE)"
