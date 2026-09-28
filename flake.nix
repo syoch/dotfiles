@@ -67,7 +67,7 @@
             ./modules-nixos
             ./components/host/${folder}
             sops-nix.nixosModules.sops
-            syoch-infra.nixosModules.syoch-portal
+            syoch-infra.nixosModules.portal
           ]
           ++ extraModules;
         };
@@ -76,7 +76,7 @@
       nixosConfigurations.sv01 = nixosSystem "sv01" [
 
       ];
-      nixosConfigurations.syoch-nix = nixosSystem "syoch-nix" [
+      nixosConfigurations.laptop = nixosSystem "syoch-nix" [
         vscode-server.nixosModules.default
         (
           { config, pkgs, ... }:
@@ -92,11 +92,21 @@
           ./components/droid/p30t
           {
             environment.packages = [
-              syoch-infra.packages.aarch64-linux.portal
+              syoch-infra.packages.aarch64-linux.portal-device-agent
             ];
           }
         ];
 
+        home-manager-path = home-manager-2511.outPath;
+      };
+
+      # Minimal configuration for initial bootstrap (sshd only).
+      # Used to bring up SSH access on a fresh phone, before deploying the full p30t config.
+      nixOnDroidConfigurations.initial = nix-on-droid.lib.nixOnDroidConfiguration {
+        pkgs = import nixpkgs-2511 { system = "aarch64-linux"; };
+        modules = [
+          ./components/droid/initial
+        ];
         home-manager-path = home-manager-2511.outPath;
       };
       packages.x86_64-linux.iso = nixos-generators.nixosGenerate {

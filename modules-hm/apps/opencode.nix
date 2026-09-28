@@ -131,7 +131,7 @@ in
     systemd.user.services.opencode = {
       Unit = {
         Description = "OpenCode WebUI";
-        Requires = [
+        Wants = [
           "playwright-mcp.service"
           "chromium-cdp.service"
         ];
