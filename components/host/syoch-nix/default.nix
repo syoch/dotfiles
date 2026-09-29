@@ -10,6 +10,7 @@
     ./wifi.nix
     ./vm-lab.nix
     ./cloudflared.nix
+    ./nnctrobo.nix
     ./portal-device-agent.nix
   ];
 
@@ -98,31 +99,7 @@
     SUBSYSTEMS=="usb", ATTRS{idVendor}=="0483", ATTRS{idProduct}=="374b", MODE="0666"
   '';
 
-  nix.settings.substituters = [
-    "https://nnctrobo.cachix.org"
-  ];
-  nix.settings.trusted-public-keys = [
-    "nnctrobo.cachix.org-1:1dKKIMpU2HT8hYTQVOxaE8YGT1rVvHpZNjgkMCrIRzM="
-  ];
-
   services.resolved.enable = false;
-
-  sops.secrets."netbird-wt0-setup-key" = {
-    owner = "root";
-    path = "/etc/nixos/netbird-wt0-setup-key";
-  };
-  services.netbird.clients.wt0 = {
-    login = {
-      enable = true;
-      setupKeyFile = config.sops.secrets."netbird-wt0-setup-key".path;
-    };
-    port = 51821;
-    ui.enable = false;
-    dns-resolver.address = "127.0.0.53";
-    dns-resolver.port = 5053;
-    openFirewall = true;
-    openInternalFirewall = true;
-  };
 
   services.blocky = {
     enable = true;
@@ -165,7 +142,6 @@
     settings.bind-interfaces = true;
     settings.interface = "lo";
     servers = [
-      "/nnctrobo.internal/127.0.0.53#5053"
       # "/syoch.org/10.42.0.1"
       "127.0.0.1#54"
     ];
@@ -176,14 +152,6 @@
   };
 
   networking.hosts = {
-    "10.50.10.1" = [
-      "sv01.nnctrobo.internal"
-      "id.nnctrobo.internal"
-      "nextcloud.nnctrobo.internal"
-      "nextcloud-wb.nnctrobo.internal"
-      "smb.nnctrobo.internal"
-      "luminary.nnctrobo.internal"
-    ];
     "10.42.0.1" = [
       "sv01.syoch.org"
       "files.pri.syoch.org"

@@ -7,6 +7,7 @@
     ./hardware-configuration.nix
     ./secrets.nix
     ./cloudflared.nix
+    ./nnctrobo.nix
     ./services/collabora.nix
     ./services/nextcloud.nix
     ./services/pgsql.nix
@@ -30,7 +31,6 @@
   networking.domain = config.servers.domain;
   networking.networkmanager.enable = true;
 
-  services.cloudflared.enable = true;
   fileSystems."/boot/efi".options = [ "nofail" ];
 
   users.groups.nas-agent = { };

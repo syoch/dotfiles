@@ -2,11 +2,11 @@ PROCS = $(shell nproc)
 PROCS_n1 = $(shell expr $(PROCS) - 1)
 
 SV01_USER := syoch
-SV01_HOST := 100.96.100.1
+SV01_HOST ?= 100.96.100.1
 SV01_SECRETS := ./components/host/sv01/secrets-sv01.yaml
 
 SYOCH_NIX_USER := syoch
-SYOCH_NIX_HOST := syoch-nix
+SYOCH_NIX_HOST ?= syoch-nix
 SYOCH_NIX_SECRETS := ./components/host/syoch-nix/secrets.yaml
 
 rebuild-sv01:

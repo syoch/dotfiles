@@ -11,6 +11,7 @@
     owner = "root";
     path = "/etc/nixos/cfd-tunnel-nextcloud.json";
   };
+
   services.cloudflared = {
     enable = true;
     certificateFile = config.sops.secrets."cloudflared-account-cred".path;
