@@ -19,7 +19,7 @@
 
   services.nextcloud = {
     enable = true;
-    package = pkgs.nextcloud34;
+    package = pkgs.nextcloud35;
     hostName = config.servers.hosts."nextcloud".fqdn;
     database.createLocally = true;
     config.dbtype = "pgsql";
@@ -37,8 +37,9 @@
       "opcache.interned_strings_buffer" = "32";
     };
     extraApps = {
-      inherit (pkgs.nextcloud34Packages.apps) calendar tasks whiteboard;
-      inherit (pkgs.nextcloud34Packages.apps) deck previewgenerator;
+      inherit (pkgs.nextcloud35Packages.apps) calendar tasks whiteboard;
+      inherit (pkgs.nextcloud35Packages.apps) deck;
+      inherit (pkgs.nextcloud35Packages.apps) spreed;
       ncgantt = pkgs.fetchNextcloudApp {
         url = "https://github.com/xenofex7/nextcloud-gantt/archive/9d186488518a8072837e9ab4318088335a8266b7.tar.gz";
         hash = "sha256-gozACkVIIyEqoOvT7jn1PwTDbTUDhje/Wf1wd0fRLMs=";
@@ -78,6 +79,7 @@
       nextcloud-occ app:enable tasks
       nextcloud-occ app:enable whiteboard
       nextcloud-occ app:enable files_external
+      nextcloud-occ app:enable spreed
       nextcloud-occ config:app:set whiteboard collabBackendUrl --value="https://${
         config.servers.hosts."nextcloud".fqdn
       }/whiteboard/"

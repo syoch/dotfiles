@@ -4,6 +4,12 @@ hl.monitor({
   position = "1920x0",
   scale = 1.0,
 });
+hl.monitor({ -- BOE Display connected via Type-C
+  output = "desc:BOE Display L56051794302",
+  mode = "1920x1080@60",
+  position = "3840x0",
+  scale = 1.0,
+});
 hl.monitor({
   output = "desc:BOE Display demoset-1",
   mode = "1920x1080@60",

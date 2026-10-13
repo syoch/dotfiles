@@ -1,11 +1,15 @@
 config.xml
 .direnv
 *.qcow2
-result
 .antigravitycli
-dotfiles.tgz
 modules-hm/apps/opencode/node_modules
-# nix build outputs
+
+.playwright-mcp
+
+result
+
+# Nix On Droid things
+dotfiles.tgz
 result-droid
 result-droid-*
 .droid-*

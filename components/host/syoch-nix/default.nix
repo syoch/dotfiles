@@ -142,7 +142,7 @@
     settings.bind-interfaces = true;
     settings.interface = "lo";
     servers = [
-      # "/syoch.org/10.42.0.1"
+      "/syoch.org/10.42.0.1"
       "127.0.0.1#54"
     ];
   };
@@ -152,10 +152,6 @@
   };
 
   networking.hosts = {
-    "10.42.0.1" = [
-      "sv01.syoch.org"
-      "files.pri.syoch.org"
-    ];
     "127.0.0.1" = [
       "z-procon-main.syoch.org"
       "opencode.syoch.org"

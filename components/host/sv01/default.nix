@@ -17,6 +17,7 @@
   # Config
   os-mod.system.enable = true;
   os-mod.system.allowWheelToRunSudo = true;
+  security.sudo.wheelNeedsPassword = false;
 
   os-mod.user-syoch.enable = true;
 
@@ -36,7 +37,6 @@
   users.groups.nas-agent = { };
   users.users.syoch.extraGroups = [ "nas-agent" ];
   users.users.nextcloud.extraGroups = [ "nas-agent" ];
-  security.sudo.wheelNeedsPassword = true;
 
   os-mod.router = {
     enable = true;
@@ -60,10 +60,17 @@
   };
   networking.hosts = {
     "10.42.0.1" = [
+      "${config.networking.hostName}.${config.servers.domain}"
       config.servers.hosts."nextcloud".fqdn
       config.servers.hosts."collabora".fqdn
       config.servers.hosts."portal".fqdn
       "db.${config.servers.domain}"
+    ];
+    "100.96.128.3" = [
+      "laptop.syoch.org"
+      "z-procon-main.syoch.org"
+      "opencode.syoch.org"
+      "code.syoch.org"
     ];
   };
 
@@ -133,5 +140,9 @@
     neovim
     wget
     podman
+  ];
+
+  fonts.packages = with pkgs; [
+    noto-fonts-cjk-sans
   ];
 }

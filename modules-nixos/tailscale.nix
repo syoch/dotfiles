@@ -16,7 +16,7 @@ in
     services.tailscale.enable = true;
     services.tailscale.extraSetFlags = [
       "--accept-dns=false"
-      "--accept-routes=false"
+      "--accept-routes=true"
     ];
     networking.firewall = {
       trustedInterfaces = [ "tailscale0" ];

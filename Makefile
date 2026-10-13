@@ -10,6 +10,7 @@ SYOCH_NIX_HOST ?= syoch-nix
 SYOCH_NIX_SECRETS := ./components/host/syoch-nix/secrets.yaml
 
 rebuild-sv01:
+	cd ~/dotfiles; git add .
 	nixos-rebuild switch --flake .#sv01 \
 		--sudo --ask-sudo-password \
 		--target-host $(SV01_USER)@$(SV01_HOST) \
