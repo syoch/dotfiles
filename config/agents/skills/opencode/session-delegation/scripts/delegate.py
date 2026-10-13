@@ -19,6 +19,7 @@ Create or find a session, send a prompt, and send a completion callback.
 """
 import argparse
 import json
+import os
 import pathlib
 import subprocess
 import sys
@@ -27,8 +28,8 @@ import urllib.error
 import urllib.request
 
 SERVER = "http://localhost:12000"
-PROVIDER = "opencode-go"
-MODEL = "space-bunny-free"
+PROVIDER = os.environ.get("DELEGATE_PROVIDER", "opencode-go")
+MODEL = os.environ.get("DELEGATE_MODEL", "deepseek-v4.1-flash")
 
 EXIT_OK = 0
 EXIT_ERROR = 1
@@ -97,17 +98,27 @@ def delegate(args):
 
 
 def notify_done(args):
+    """Send the completion callback without waiting for the reply.
+
+    Uses prompt_async on purpose. The blocking /message endpoint does not return
+    until the recipient finishes its current run, so a busy recipient deadlocks
+    the sender. The callback only has to arrive; its reply is not needed.
+    """
     marker = json.loads(pathlib.Path(args.marker_or_none).read_text(encoding="utf-8"))
     prompt = build_done_prompt(marker)
-    resp = post(f"/session/{args.notify_done}/message", {
-        "parts": [{"type": "text", "text": prompt}],
-        "model": {"providerID": PROVIDER, "modelID": MODEL},
-    })
-    body = json.loads(resp.read().decode("utf-8"))
-    if body.get("info", {}).get("error"):
-        print(f"ERROR: {body['info']['error']}")
+    try:
+        resp = post(f"/session/{args.notify_done}/prompt_async", {
+            "parts": [{"type": "text", "text": prompt}],
+            "model": {"providerID": PROVIDER, "modelID": MODEL},
+        }, timeout=30)
+    except urllib.error.URLError as error:
+        print(f"ERROR: {error}")
         return EXIT_ERROR
-    print(f"OK: {args.notify_done} notified ({len(prompt)} chars）")
+    body = resp.read().decode("utf-8")
+    if '"error"' in body:
+        print(f"ERROR: {body}")
+        return EXIT_ERROR
+    print(f"OK: {args.notify_done} notified ({len(prompt)} chars)")
     return EXIT_OK
 
 
