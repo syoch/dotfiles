@@ -1,7 +1,6 @@
 ---
 name: nix-shell-pdf-ocr
 description: Use when extracting text or OCR from a PDF on a Nix system where poppler-utils/tesseract are not pre-installed; trigger keywords: nix-shell, pdftotext, pdftoppm, tesseract, jpn+eng, OCR PDF, NixOS no binaries.
-args: <pdf>
 ---
 
 # Extracting text or OCR from PDFs on Nix systems

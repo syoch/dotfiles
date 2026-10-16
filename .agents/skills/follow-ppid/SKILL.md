@@ -1,7 +1,6 @@
 ---
 name: follow-ppid
 description: Use when tracing a process's parent chain: walk up /proc/<pid>/stat field 4 (ppid) and print each ancestor with comm name. Trigger keywords: follow ppid, parent process chain, process ancestry, /proc stat.
-args: <pid>
 ---
 
 # follow-ppid

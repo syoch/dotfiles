@@ -1,7 +1,6 @@
 ---
 name: marp-editable-pptx
 description: Use when producing a PowerPoint that must keep editable text (not a flat image), or when porting an HTML/CSS deck to PPTX. Trigger keywords: marp --pptx-editable, 編集可能 pptx, marp pptx notes, marp 独自CSS, marp fragment pptx, PowerPoint テキスト編集.
-args: <markdown の正> <出力.pptx>
 ---
 
 ## いつ使う

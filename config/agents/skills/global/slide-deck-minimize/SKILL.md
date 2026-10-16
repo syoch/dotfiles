@@ -1,7 +1,6 @@
 ---
 name: slide-deck-minimize
 description: Use when measuring or reducing slide cognitive load (text volume, element count) against evidence-based thresholds. Trigger keywords: スライド, 発表, プレゼン, presentation, slide, 文字数, 要素数, 認知負荷, cognitive load, 5x5 rule, one idea per slide, Kosslyn, Mayer, 減量, スライドを薄く.
-args: &lt;deck.md&gt; [build_html.py]
 ---
 
 # 発表スライドの認知負荷を減らす（汎用）

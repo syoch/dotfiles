@@ -1,7 +1,6 @@
 ---
 name: web-recon-osint
 description: Use when performing web penetration-testing reconnaissance / OSINT enumeration against a target domain: subdomain enumeration, certificate transparency (crt.sh/certspotter), DNS records, TCP port scanning, HTTP fingerprinting, Cloudflare Access detection, WHOIS, and mining public GitHub infra repos (dotfiles/infrastructure) for service configs. Trigger keywords: web recon, OSINT, subdomain enumeration, CT logs, crt.sh, certspotter, port scan, Cloudflare Access bypass, CDN origin discovery, WHOIS, DNS enumeration, HTTP fingerprinting, GitHub infra repo mining.
-args: <domain>
 ---
 
 # Web Recon / OSINT Enumeration

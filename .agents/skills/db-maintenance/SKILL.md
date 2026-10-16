@@ -1,7 +1,6 @@
 ---
 name: db-maintenance
 description: Use when compacting/reclaiming disk from the opencode SQLite DB (opencode-stable.db). opencode's event table grows without bound and deleted rows are not returned to the filesystem until a VACUUM; /home may be nearly full so use VACUUM INTO on a filesystem with room. Trigger keywords: opencode db, opencode-stable.db, VACUUM, vacuum into, wal_checkpoint, db shrink, disk full, session delete reclaim.
-args: なし
 ---
 
 # db-maintenance (scripts/db-maintenance)

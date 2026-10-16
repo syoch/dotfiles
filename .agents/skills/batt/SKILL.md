@@ -1,7 +1,6 @@
 ---
 name: batt
 description: Use when checking laptop battery status: display BAT0 state (Discharging/Charging) and remaining percentage via /sys/class/power_supply/BAT0. Trigger keywords: battery, batt, power status, BAT0, remaining percent.
-args: なし
 ---
 
 # batt

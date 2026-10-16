@@ -1,7 +1,6 @@
 ---
 name: worktree-admin-dir-loss-forensics
 description: Use when git worktree management info under .git/worktrees/ disappeared while the working tree directories survived, or when a bot/agent/script may have run destructive git commands. Determines the culprit command from mtimes, container logs, and systemd journals, then reproduces the mechanism in a sandbox. Trigger keywords: worktree 消えた, .git/worktrees 消滅, worktree 管理情報, fatal: not a git repository, git worktree prune, worktree 調査, worktree forensics.
-args: &lt;リポジトリのパス&gt;
 ---
 
 ## いつ使うか

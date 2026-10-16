@@ -1,7 +1,6 @@
 ---
 name: slide-data-viz
 description: Use when creating or reviewing charts, maps, diagrams, or comparison figures for a presentation, or when applying Tufte principles (data-ink ratio, chartjunk, lie factor) to slide graphics. Trigger keywords: 図, チャート, グラフ, 可視化, マップ, 比較図, SVG, matplotlib, Recharts, Tufte, data-ink ratio, chartjunk, pie chart, 3D effect, 凡例, legend, small multiples, 投影, プロジェクタ, 地図, 経路図.
-args: &lt;chart|figure|map|diagram&gt; [message]
 ---
 
 # 発表用の図とチャートを設計する

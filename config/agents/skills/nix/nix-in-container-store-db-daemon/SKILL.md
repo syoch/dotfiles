@@ -1,7 +1,6 @@
 ---
 name: nix-in-container-store-db-daemon
 description: Use when a container needs to run nix commands against the host's already-realised store, or when nix inside a container reports the store as empty, downloads everything, or errors with `cannot determine user's home directory` / `experimental Nix feature 'nix-command' is disabled`. Trigger keywords: nix in container, nix develop in docker, nix store empty, /nix/var/nix/db, NIX_REMOTE=daemon, daemon-socket, bind-ro /nix/store, nixos-containers, nix cannot determine user's home directory, nix-command disabled, passwd entry uid.
-args: <コンテナを起動するコマンドの例>
 ---
 
 Use when a container needs to run nix commands and reach the host's already-realised store,

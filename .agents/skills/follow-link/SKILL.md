@@ -1,7 +1,6 @@
 ---
 name: follow-link
 description: Use when tracing a symbolic link chain: follow a symlink's target recursively and print each hop. Trigger keywords: follow symlink, readlink chain, symlink trace, link resolution.
-args: <link>
 ---
 
 # follow-link

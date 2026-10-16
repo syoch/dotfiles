@@ -828,3 +828,59 @@ nnctrobo 側の LDAP 実装（`~/ghq/github.com/nnctroboticsclub/infrastructure`
 5. `ldap:set-config` を `nextcloud-custom-config` に追加
 6. `/ctl/role` を新設（occ と同じ `nextcloud` user で `ldapadd`/`ldapmodify` を呼ぶ）
 7. 既存 14 セッション分の uid を batch 投入
+
+---
+
+## 2026-10-13 opencode 側で Talk 統合を持つ案 — 実測した制約
+
+ユーザー提案: 「bridge を挟まず、opencode 側で bot secret を持ち webhook サーバーを持つ」。
+以下は実機で確認した事実。
+
+### 追い風: desktop から Talk OCS API に直接届く（旧前提の撤回）
+- `POST https://nextcloud.syoch.org/ocs/v2.php/apps/spreed/api/v1/bot/<token>/message` を
+  desktop から叩くと **本物の OCS XML（statuscode 400, 署名なし）** が返る。`server: nginx`、
+  CF Access の 302 は出ない。
+- **旧記述「desktop から Talk API への直接投稿は Cloudflare Access に弾かれる」は現在は該当しない**。
+  → **opencode（desktop）が bot secret を持って直接投稿する設計は成立する**。
+- sv01 origin へも tailnet（`https://100.96.100.1`）で到達可能。
+
+### 障害 1: plugin は HTTP ルートを生やせない
+- `@opencode-ai/plugin` の `Hooks` は `event` / `config` / `tool` / `auth` / `provider` /
+  `chat.message` / `chat.params` / `chat.headers` / `permission.ask` /
+  `command.execute.before` / `tool.execute.before|after` / `shell.env` /
+  `experimental.*` のみ。**ルート登録フックは存在しない**。
+- → webhook 受信を plugin 単体では実装できない。選択肢は
+  (a) 薄い inbound sidecar（HMAC 検証 + ローカル opencode へ転送だけ）か
+  (b) Talk を定期 poll して inbound を無くす（bot が会話を読めるかは未確認。bot は通常 session を持たない）
+
+### 障害 2: bot lifecycle は occ 必須
+- `talk:bot:install` は occ 専用（OCS では install できない）→ install は sv01 側が要る
+  （SSH exec で叩く / bot を事前プロビジョニングする）。
+
+### 障害 3: inbound 到達性
+- 現 bot URL は `http://127.0.0.1:8787/hook/<token>/<role>`（**sv01 の loopback**）。
+  受信を desktop に移すなら **tailnet アドレスの URL** に変える必要がある（Talk → desktop は tailnet で届く）。
+
+### 運用メモ
+- `talk:bot:list -v` は **secret を出力する**。実測で dotfiles-lead の live secret をセッションに
+  露出させた（2026-10-13、要 rotate 検討）。`-v` は使わない。id は `install` の stdout `ID: N` を直接パース。
+- イベント読み取りは **SSE + 定期 reconcile** で合意（ユーザー）。
+
+### nudge ゲートを [talk-msg] マーカー方式へ (2026-10-15)
+
+- 症状: nudge が全セッションで無条件に発火し、NextCloud 認証情報を持たない
+  セッションやローカル入力のターンでも "nothing to say" の空ターンを生んでいた。
+- 修正: talk-poll.py の deliver() が Talk 由来プロンプト先頭に `[talk-msg]` を
+  付与し、plugins/talk-post.ts はそのマーカーを持つターンだけを nudge 対象に
+  する。マーカーは「Talk への返答が期待されるターン」の唯一の signal で、
+  未绑定セッションにはそもそも配送されない（user 提案の方式）。
+- nudge の結末を `[talk-post] nudge accepted|declined` としてログ出力
+  （ハーネスフィードバック収集の第一歩。nudge が元を取っているかの計測用）。
+- 実測: smoke test 8/8 PASS、実セッションへの deliver で `[talk-msg] ...` を
+  確認済み。レシーバーは再起動済み。**プラグイン反映には opencode 再起動が
+  必要**（再起動までは旧挙動のまま）。
+- 発見（未修正）: system.transform の briefing は resolveRoute が空のブリッジ
+  registry を見るため bound:false を返し、全 venue セッションで注入されない
+  （dotfiles 2 セッションで実測確認）。talk_bind を情報源に移す必要がある。
+- 付記: nudge の promptAsync は SDK v1 に delivery 型が無く未指定のまま
+  （idle 直後の race は軽微と判断し放置）。

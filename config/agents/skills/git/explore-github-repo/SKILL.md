@@ -1,7 +1,6 @@
 ---
 name: explore-github-repo
 description: Use when exploring a GitHub repository's source code structure and file contents without cloning it. Trigger keywords: explore github repo, browse repo source, read github file, github api directory listing, view source without clone, inspect repository structure.
-args: <owner/repo>
 ---
 
 # Explore a GitHub Repository Without Cloning

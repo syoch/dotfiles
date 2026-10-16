@@ -1,7 +1,6 @@
 ---
 name: update-nix-on-droid
 description: Use when updating Nix-on-Droid on the phone. Two stages: (1) initial bootstrap (sshd-only ~450 MiB minimal config via adb), (2) full p30t deployment via SSH once sshd is up. Desktop builds the activation package; phone just imports and activates. Trigger keywords: nix-on-droid update, phone flake switch, droid-build, droid-serve, sshd bootstrap.
-args: なし
 ---
 
 # update-nix-on-droid

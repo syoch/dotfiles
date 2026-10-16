@@ -1,7 +1,6 @@
 ---
 name: pandoc-docx-jp-style
 description: Use when generating a styled .docx from text/markdown with pandoc on a Nix system, customizing a reference.docx styles.xml (eastAsia Japanese fonts like 游明朝, line spacing, heading sizes, centering) by editing the zip directly, then converting to PDF with LibreOffice. Trigger keywords: pandoc reference.docx, styles.xml edit, w:eastAsia 游明朝, nix shell pandoc, sofice convert docx to pdf, custom docx styles, report to word, pdftotext verify docx style.
-args: <md> <out.docx>
 ---
 
 # Pandoc .docx styling via custom reference.docx (Japanese eastAsia fonts)

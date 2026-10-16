@@ -1,7 +1,6 @@
 ---
 name: session-delegation
 description: Use when delegating work to another OpenCode session over the Web API, or when a delegated session looks stalled: managed server on port 12000, nested model in the request body (top-level providerID/modelID hangs forever), prompt_async for fire-and-forget, backgrounding with nohup, cold-start non-determinism, completion callbacks instead of polling, the pgrep self-deadlock trap, and checking liveness with session_state.py. Trigger keywords: OpenCode Web API, opencode serve, opencode.service, delegate, delegation, セッション委任, 委任, prompt_async, noReply, fire-and-forget, バックグラウンド起動, コールドスタート, 応答が来ない, nohup, session_state, 完了通知, pgrep.
-args: &lt;worktree&gt; &lt;prompt file&gt;
 ---
 
 ## Do not poll. Ask for a callback.

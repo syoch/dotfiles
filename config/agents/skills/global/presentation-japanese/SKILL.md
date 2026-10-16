@@ -1,7 +1,6 @@
 ---
 name: presentation-japanese
 description: Use when sizing a Japanese presentation script to a time limit, or when the script is too long/short. Trigger keywords: 日本語発表, 発表原稿, 文字数, 話速, 読み上げ, 原稿用紙, 分読み, 発表時間, 8分, 6分, NHK 300字, 字数予算, speaking rate Japanese, script length.
-args: &lt;script.md&gt; [minutes]
 ---
 
 # 日本語発表の文字数予算と話速

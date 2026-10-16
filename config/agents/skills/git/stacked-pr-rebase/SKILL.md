@@ -1,7 +1,6 @@
 ---
 name: stacked-pr-rebase
 description: Use when fixing stacked or dependent GitHub PRs whose base was changed to main after a squash merge, causing inflated diffs and CONFLICTING state, or when deciding whether one PR can replace another. Covers merge-base diagnosis, tree-hash proof of zero data loss, git rebase --onto upstream selection, force-with-lease, and remote backups. Trigger keywords: stacked PR, base change, CONFLICTING DIRTY, merge-base, rebase --onto, force-push, force-with-lease, squash merge, PR absorption, inflated diff, スタックしたPR, base変更, 競合, 履歴の巻き戻し, PR統合.",
-args: &lt;feature ブランチ名&gt; [&lt;新しい base&gt;]
 ---
 
 ## いつ使うか

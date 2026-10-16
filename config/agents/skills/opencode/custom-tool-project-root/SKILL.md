@@ -1,7 +1,6 @@
 ---
 name: custom-tool-project-root
 description: Use when writing or reviewing opencode custom tools or plugins that resolve project-scoped paths (.agents/, .agents/memory/, catalogs): must use ctx.worktree/ctx.directory (tools) or client.session.get directory (plugin hooks) instead of process.cwd(), which breaks under the webui server. Trigger keywords: opencode custom tool cwd, ctx.directory ctx.worktree, project root resolution, memory scope collision, agents-bridge session directory, process.cwd bug
-args: なし
 ---
 
 # opencode custom tool / plugin のプロジェクトルート解決

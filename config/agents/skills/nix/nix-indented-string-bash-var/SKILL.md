@@ -1,7 +1,6 @@
 ---
 name: nix-indented-string-bash-var
 description: Use when writing bash variable expansion inside a Nix indented string (''...''), writeShellScript, or writeText, or when a flake evaluation fails with "undefined variable" or "unexpected invalid token". Trigger keywords: nix indented string, bash variable in nix, writeShellScript, setup-script, undefined variable, 2つのシングルクォート, ''${...}, nix trap, nix 補間.
-args: &lt;flake.nix のパス&gt;
 ---
 
 ## いつ使うか

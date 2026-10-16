@@ -1,7 +1,6 @@
 ---
 name: worktree-prune-hazard
 description: Use when running git inside a container/VM/sandbox that mounts a host repository, or when `git worktree prune` unexpectedly removes every registration in .git/worktrees. Trigger keywords: git worktree prune, prunable, gitdir file points to non-existent location, .git/worktrees disappeared, worktree prune deletes all, read-only .git mount is not enough, mount host repo at all, prune in container, git worktree list prunable, git bundle, git clone --shared --no-checkout.
-args: &lt;リポジトリのパス&gt;
 ---
 
 ## git worktree prune はリポジトリ単位の破壊的演算

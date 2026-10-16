@@ -1,7 +1,6 @@
 ---
 name: verify-external-api
 description: Use when integrating with any external product's API / CLI / webhook, or before writing a skill from documentation, to verify the contract against the real server first. Covers version pinning, capturing real inputs instead of synthesizing payloads, the three test traps (self-made payload passes, passing by doing nothing, falsy stub values), inversion testing, and the structural limit of probing a session that is measuring itself. Trigger keywords: verify external api, contract verification, spreed version, synthesize payload trap, test passes by doing nothing, inversion test, dry-run first, real event log, 未確認.
-args: <api> <host>
 ---
 
 # 外部 API の契約を実機で先に検証してから skill にする

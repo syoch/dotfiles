@@ -1,7 +1,6 @@
 ---
 name: cleanup
 description: Use when cleaning up the Nix store: remove dangling /nix/var/nix/gcroots/auto links, run nix store gc and nix-collect-garbage -d and nix store optimise. Trigger keywords: nix gc, nix-collect-garbage, cleanup nix store, gcroots auto, store optimise.
-args: なし
 ---
 
 # cleanup
