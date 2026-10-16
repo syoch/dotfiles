@@ -14,7 +14,6 @@ auto-generated from tool-call patterns.
 | `design-agent` | Consult-only primary agent for design discussions |
 | `memory-tool` | Long-term memory tools at project/global scope |
 | `global-agents` | Global behavioral rules file (`AGENTS.md`) |
-| `orchestration` | Multi-agent orchestration plugin + leader/proposer/critic agents |
 
 ## What's enabled
 

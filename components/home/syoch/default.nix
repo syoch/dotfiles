@@ -63,6 +63,5 @@
   hm-module.opencode.design-agent.enable = true;
   hm-module.opencode.memory-tool.enable = true;
   hm-module.opencode.global-agents.enable = true;
-  hm-module.opencode.orchestration.enable = true;
   programs.zsh.shellAliases."opencode" = "OPENCODE_ENABLE_EXA=1 opencode";
 }

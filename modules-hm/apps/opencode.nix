@@ -52,17 +52,6 @@ in
       '';
     };
 
-    orchestration = {
-      enable = mkEnableOption ''
-        orchestration plugin + agents: multi-agent orchestration for
-        brainstorm/discussion/parallel research. Provides the
-        orchestrate_run tool (leader-only, code-gated) that runs participant
-        agents (proposer/critic/design) against persistent per-run sessions
-        (.agents/orchestration/<name>.json) with sequential/parallel modes.
-        Includes leader (subagent, strong model) / proposer / critic agent
-        definitions.
-      '';
-    };
   };
 
   config = mkIf cfg.enable {
@@ -182,17 +171,6 @@ in
           config.lib.file.mkOutOfStoreSymlink "${opencodeSrc}/agents/design.md";
       })
 
-      # orchestration plugin + agents
-      (mkIf cfg.orchestration.enable {
-        ".config/opencode/plugins/orchestration.ts".source =
-          config.lib.file.mkOutOfStoreSymlink "${opencodeSrc}/orchestration.ts";
-        ".config/opencode/agents/leader.md".source =
-          config.lib.file.mkOutOfStoreSymlink "${opencodeSrc}/agents/leader.md";
-        ".config/opencode/agents/proposer.md".source =
-          config.lib.file.mkOutOfStoreSymlink "${opencodeSrc}/agents/proposer.md";
-        ".config/opencode/agents/critic.md".source =
-          config.lib.file.mkOutOfStoreSymlink "${opencodeSrc}/agents/critic.md";
-      })
     ];
 
     # ── Imperative activation scripts ──────────────────────────────────
