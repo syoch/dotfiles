@@ -13,6 +13,11 @@ in
 {
   options.hm-module.opencode = {
     enable = mkEnableOption "opencode";
+    package = mkOption {
+      type = types.package;
+      default = pkgs.opencode;
+      description = "The opencode package to use.";
+    };
 
     tasks = {
       enable = mkEnableOption "opencode tasks tool (tmux-backed background tasks)";
@@ -57,6 +62,7 @@ in
   config = mkIf cfg.enable {
     programs.opencode = {
       enable = true;
+      package = cfg.package;
       settings = {
         permission = {
           webfetch = "allow";
@@ -109,8 +115,7 @@ in
         After = [ "chromium-cdp.service" ];
       };
       Service = {
-        ExecStart =
-          "${pkgs.nodejs}/bin/node ${config.home.homeDirectory}/.local/share/opencode-mcp/node_modules/@playwright/mcp/cli.js --port 8931 --cdp-endpoint http://localhost:9222";
+        ExecStart = "${pkgs.nodejs}/bin/node ${config.home.homeDirectory}/.local/share/opencode-mcp/node_modules/@playwright/mcp/cli.js --port 8931 --cdp-endpoint http://localhost:9222";
         Restart = "on-failure";
         RestartSec = 5;
       };
@@ -129,7 +134,62 @@ in
           "chromium-cdp.service"
         ];
       };
-      Service.ExecStart = "${pkgs.opencode}/bin/opencode web --hostname 127.0.0.1 --port 12000";
+      Service.ExecStart = "${cfg.package}/bin/opencode web --hostname 127.0.0.1 --port 12000";
+      Install.WantedBy = [ "default.target" ];
+    };
+
+    # opencode binds loopback and has no authentication of its own. sv01 runs
+    # the NextCloud Talk bridge, which must reach this server, so we open a
+    # reverse tunnel from the desktop onto sv01's loopback rather than
+    # publishing opencode on the Tailnet (which the phone is also a member of).
+    #
+    # `-R 127.0.0.1:<port>:127.0.0.1:12000` binds the *far* end to loopback,
+    # so nothing off-host on sv01 can use it.
+    systemd.user.services.opencode-sv01-tunnel = {
+      Unit = {
+        Description = "Reverse tunnel exposing opencode to sv01 loopback (Talk bridge)";
+        After = [ "network-online.target" ];
+        Wants = [ "network-online.target" ];
+      };
+      Service = {
+        # `writeShellApplication` returns the package directory, so the
+        # executable is under `bin/`. Pointing ExecStart at the directory made
+        # systemd fail with `203/EXEC: Is a directory`, restarting every 10s
+        # forever (NRestarts reached 582) with the tunnel never coming up.
+        ExecStart = "${
+          pkgs.writeShellApplication {
+            name = "opencode-sv01-tunnel";
+            runtimeInputs = [ pkgs.openssh ];
+            text = ''
+              set -o errexit
+              while true; do
+                ssh -N \
+                  -o BatchMode=yes \
+                  -o ExitOnForwardFailure=yes \
+                  -o ServerAliveInterval=30 \
+                  -o ServerAliveCountMax=3 \
+                  -o StrictHostKeyChecking=accept-new \
+                  -R "127.0.0.1:$SV01_TUNNEL_PORT:127.0.0.1:12000" \
+                  -L "127.0.0.1:$SV01_CTL_PORT:127.0.0.1:8787" \
+                  "$SV01_USER@$SV01_HOST" || true
+                sleep 10
+              done
+            '';
+          }
+        }/bin/opencode-sv01-tunnel";
+        # systemd wants a list of KEY=VALUE, not an attribute set.
+        Environment = [
+          "SV01_USER=syoch"
+          "SV01_HOST=100.96.100.1"
+          "SV01_TUNNEL_PORT=12000"
+          # The talk-post plugin needs the bridge's control API to resolve which
+          # venue its opencode session speaks for. Forwarded over the same
+          # tunnel so the bridge keeps listening on sv01 loopback only.
+          "SV01_CTL_PORT=8788"
+        ];
+        Restart = "always";
+        RestartSec = 10;
+      };
       Install.WantedBy = [ "default.target" ];
     };
 
@@ -150,6 +210,26 @@ in
           config.lib.file.mkOutOfStoreSymlink "${opencodeSrc}/agents.ts";
         ".config/opencode/plugins/agents-bridge.ts".source =
           config.lib.file.mkOutOfStoreSymlink "${opencodeSrc}/agents-bridge.ts";
+        # `talk-post.ts` reads TALK_BRIDGE_CTL and NEXTCLOUD_URL from the
+        # environment with loopback defaults, so no wiring is needed here.
+        ".config/opencode/plugins/talk-post.ts".source =
+          config.lib.file.mkOutOfStoreSymlink "${opencodeSrc}/talk-post.ts";
+        # Tools must live under tools/ to reach the model; a plugin's `tool: {}`
+        # map is not exposed (verified with a probe). A named export becomes
+        # `<file>_<export>`; a default export becomes just `<file>`.
+        ".config/opencode/tools/talk-post.ts".source =
+          config.lib.file.mkOutOfStoreSymlink "${opencodeSrc}/tools/talk-post.ts";
+        ".config/opencode/tools/talk-delegate.ts".source =
+          config.lib.file.mkOutOfStoreSymlink "${opencodeSrc}/tools/talk-delegate.ts";
+        ".config/opencode/tools/talk-roles.ts".source =
+          config.lib.file.mkOutOfStoreSymlink "${opencodeSrc}/tools/talk-roles.ts";
+        # NextCloud data access for the roles. These authenticate with the
+        # role's own app password straight out of talk_bind, so they act as a
+        # real user and inherit that user's permissions.
+        ".config/opencode/tools/nextcloud-deck.ts".source =
+          config.lib.file.mkOutOfStoreSymlink "${opencodeSrc}/tools/nextcloud-deck.ts";
+        ".config/opencode/tools/nextcloud-files.ts".source =
+          config.lib.file.mkOutOfStoreSymlink "${opencodeSrc}/tools/nextcloud-files.ts";
         ".agents".source = config.lib.file.mkOutOfStoreSymlink "${dotfiles}/config/agents";
       })
 
@@ -182,7 +262,7 @@ in
         # Written via node — no shell heredoc (indented terminators inside
         # the Nix string silently swallow the rest of the script).
         if [ ! -f "$HOME/.config/opencode/package.json" ]; then
-          ${pkgs.nodejs}/bin/node -e 'require("fs").writeFileSync(process.env.HOME + "/.config/opencode/package.json", JSON.stringify({ type: "module", dependencies: { "@opencode-ai/plugin": "1.14.35" }, devDependencies: { "@types/bun": "latest" } }, null, 2) + "\n")'
+          ${pkgs.nodejs}/bin/node -e 'require("fs").writeFileSync(process.env.HOME + "/.config/opencode/package.json", JSON.stringify({ type: "module", dependencies: { "@opencode-ai/plugin": "1.18.31" }, devDependencies: { "@types/bun": "latest" } }, null, 2) + "\n")'
         else
           # Ensure @opencode-ai/plugin is declared. Use a tiny node
           # script to avoid pulling in jq.
@@ -192,12 +272,22 @@ in
             const pkg = JSON.parse(fs.readFileSync(p, "utf8"));
             pkg.dependencies = pkg.dependencies || {};
             delete pkg.dependencies["mem0ai"];
-            if (!pkg.dependencies["@opencode-ai/plugin"]) pkg.dependencies["@opencode-ai/plugin"] = "1.14.35";
+            if (!pkg.dependencies["@opencode-ai/plugin"]) pkg.dependencies["@opencode-ai/plugin"] = "1.18.31";
             fs.writeFileSync(p, JSON.stringify(pkg, null, 2) + "\n");
           '
         fi
 
-        if [ ! -d "$HOME/.config/opencode/node_modules/@opencode-ai/plugin" ]; then
+        # Compare the INSTALLED version, not just its presence. A directory
+        # existence check cannot see a version bump, so raising the pin would
+        # silently keep the old package on disk.
+        installed=$(${pkgs.nodejs}/bin/node -e '
+          try {
+            const p = process.env.HOME + "/.config/opencode/node_modules/@opencode-ai/plugin/package.json";
+            process.stdout.write(require("fs").existsSync(p) ? JSON.parse(require("fs").readFileSync(p, "utf8")).version : "");
+          } catch { process.stdout.write(""); }
+        ')
+        if [ "$installed" != "1.18.31" ]; then
+          echo "updating @opencode-ai/plugin (installed: \${"installed:-none"})"
           ${lib.getExe pkgs.bun} install --cwd "$HOME/.config/opencode" --no-save
         fi
       ''
@@ -207,7 +297,7 @@ in
     # realpath (this repo) — expose the config-dir node_modules there so
     # runtime imports like '@opencode-ai/plugin' keep resolving.
     home.activation.opencodeNodeModules =
-      mkIf (cfg.tasks.enable || cfg.agents.enable || cfg.memory-tool.enable || cfg.orchestration.enable)
+      mkIf (cfg.tasks.enable || cfg.agents.enable || cfg.memory-tool.enable)
         (
           lib.hm.dag.entryAfter [ "writeBoundary" ] ''
             ln -sfn "$HOME/.config/opencode/node_modules" "${opencodeSrc}/node_modules"

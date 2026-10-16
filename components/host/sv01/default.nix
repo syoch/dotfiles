@@ -9,10 +9,23 @@
     ./cloudflared.nix
     ./nnctrobo.nix
     ./services/collabora.nix
+    ./services/openldap.nix
     ./services/nextcloud.nix
     ./services/pgsql.nix
     ./services/portal.nix
+    ./services/talk-bridge.nix
   ];
+
+  # NextCloud Talk venue where opencode role agents hold discussions.
+  #
+  # opencode runs on the desktop and binds loopback only (it has no auth), so
+  # sv01 reaches it through a reverse SSH tunnel that the desktop opens onto
+  # sv01's loopback. See modules-hm/apps/opencode/sv01-tunnel.nix.
+  services.talk-bridge = {
+    enable = true;
+    nextcloudUrl = "https://${config.servers.hosts."nextcloud".fqdn}";
+    opencodeUrl = "http://127.0.0.1:12000";
+  };
 
   # Config
   os-mod.system.enable = true;

@@ -55,9 +55,10 @@
     pkgs.libreoffice
     pkgs.imhex
     pkgs.github-cli
-    pkgs.nix-auth
+    # pkgs.nix-auth
   ];
   hm-module.opencode.enable = true;
+  hm-module.opencode.package = pkgs.unstable.opencode;
   hm-module.opencode.tasks.enable = true;
   hm-module.opencode.agents.enable = true;
   hm-module.opencode.design-agent.enable = true;

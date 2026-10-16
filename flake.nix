@@ -4,9 +4,10 @@
 
   inputs = {
     nixpkgs.url = "github:nixos/nixpkgs/nixos-26.05";
+    nixpkgs-unstable.url = "github:nixos/nixpkgs/nixos-unstable";
     nixpkgs-2511.url = "github:nixos/nixpkgs/nixos-25.11";
     home-manager = {
-      url = "github:nix-community/home-manager";
+      url = "github:nix-community/home-manager/release-26.05";
       inputs.nixpkgs.follows = "nixpkgs";
     };
     home-manager-2511 = {
@@ -36,6 +37,7 @@
   outputs =
     {
       nixpkgs,
+      nixpkgs-unstable,
       nixpkgs-2511,
       home-manager,
       home-manager-2511,
@@ -50,6 +52,13 @@
     let
       pkgs = import nixpkgs {
         system = "x86_64-linux";
+        overlays = [
+          (final: prev: {
+            unstable = import nixpkgs-unstable {
+              inherit (final) system;
+            };
+          })
+        ];
       };
       homeManagerModules = [
         ./modules-hm
@@ -74,7 +83,6 @@
     in
     {
       nixosConfigurations.sv01 = nixosSystem "sv01" [
-
       ];
       nixosConfigurations.laptop = nixosSystem "syoch-nix" [
         vscode-server.nixosModules.default
@@ -124,7 +132,7 @@
         ];
       };
       homeConfigurations."syoch" = home-manager.lib.homeManagerConfiguration {
-        pkgs = nixpkgs.legacyPackages.x86_64-linux;
+        inherit pkgs;
         extraSpecialArgs = {
           inherit inputs;
         };
@@ -143,6 +151,7 @@
           pkgs.bun
           pkgs.android-tools
           pkgs.scrcpy
+          pkgs.apache-directory-studio
           nix-on-droid.packages.x86_64-linux.nix-on-droid
         ];
       };
